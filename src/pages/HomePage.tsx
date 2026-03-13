@@ -70,7 +70,6 @@ function WechatQRWidget() {
       </div>
     </>
   )
-  )
 }
 
 function HeroSection({ config }: { config: SiteConfig | null }) {
