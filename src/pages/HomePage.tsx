@@ -66,6 +66,7 @@ function WechatQRWidget() {
         <div>
           <p className="text-base font-semibold text-gray-800">扫码入群讨论</p>
           <p className="text-sm text-gray-500 mt-1">和大家一起探讨 AI 保险工具</p>
+          <p className="text-xs text-gray-400 mt-0.5">长按图片转发二维码</p>
         </div>
       </div>
     </>
