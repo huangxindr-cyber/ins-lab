@@ -1,0 +1,64 @@
+name: Deploy to Aliyun
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Zip dist
+        run: |
+          cd dist
+          zip -r ../deploy.zip .
+          cd ..
+
+      - name: Copy files to server via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ALIYUN_HOST }}
+          username: ${{ secrets.ALIYUN_USER }}
+          key: ${{ secrets.ALIYUN_KEY }}
+          source: "deploy.zip"
+          target: "."
+
+      - name: Deploy on server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ALIYUN_HOST }}
+          username: ${{ secrets.ALIYUN_USER }}
+          key: ${{ secrets.ALIYUN_KEY }}
+          script: |
+            set -e
+            DEPLOY_DIR="/www/wwwroot/lab.tanpeak.com"
+            PACKAGE_PATH="$HOME/deploy.zip"
+
+            echo "📦 Deploying to $DEPLOY_DIR ..."
+
+            # 解压覆盖到网站目录
+            unzip -oq "$PACKAGE_PATH" -d "$DEPLOY_DIR" || [ $? -eq 1 ]
+            rm -f "$PACKAGE_PATH"
+
+            echo "✅ Deployment finished!"
