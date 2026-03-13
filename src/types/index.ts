@@ -1,0 +1,53 @@
+export type ToolStatus = 'completed' | 'developing' | 'upcoming'
+export type LogType = 'daily' | 'weekly'
+
+export interface Tool {
+  id: string
+  number: number
+  name: string
+  description: string
+  status: ToolStatus
+  start_date: string | null
+  complete_date: string | null
+  url: string | null
+  try_count: number
+  vote_count: number
+  features: string | null
+  how_to_use: string | null
+  created_at: string
+}
+
+export interface Log {
+  id: string
+  tool_id: string | null
+  date: string
+  title: string
+  content: string
+  type: LogType
+  created_at: string
+}
+
+export interface Request {
+  id: string
+  problem: string
+  current_solution: string | null
+  willing_to_try: string | null
+  nickname: string | null
+  contact: string | null
+  vote_count: number
+  is_featured: boolean
+  created_at: string
+}
+
+export interface Subscription {
+  id: string
+  contact: string
+  created_at: string
+}
+
+export interface SiteConfig {
+  id: string
+  hero_title: string
+  hero_subtitle: string
+  experiment_start_date: string
+}
