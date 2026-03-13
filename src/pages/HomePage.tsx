@@ -38,6 +38,7 @@ export default function HomePage() {
 
   return (
     <div className="pt-14">
+      <WechatQRWidget />
       <HeroSection config={config} />
       <ProgressSection days={days} completedCount={completedTools.length} requestCount={requests.length} />
       {developingTools.length > 0 && <ToolsSection title="正在开发" tools={developingTools} />}
@@ -48,6 +49,27 @@ export default function HomePage() {
       {logs.length > 0 && <LogsSection logs={logs} />}
       <SubscribeSection />
     </div>
+  )
+}
+
+function WechatQRWidget() {
+  return (
+    <>
+      {/* 桌面端：左侧固定悬浮 */}
+      <div className="hidden md:flex fixed top-20 left-4 z-40 flex-col items-center bg-white rounded-2xl shadow-lg border border-gray-100 p-4 w-48">
+        <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-full rounded-xl object-cover" />
+        <p className="text-center text-gray-700 text-sm font-medium mt-3">入群讨论</p>
+      </div>
+      {/* 移动端：顶部内嵌横排 */}
+      <div className="md:hidden flex items-center gap-4 bg-white border border-gray-100 shadow-sm rounded-2xl px-4 py-3 mx-4 mt-3">
+        <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-24 h-24 rounded-xl object-cover flex-shrink-0" />
+        <div>
+          <p className="text-base font-semibold text-gray-800">扫码入群讨论</p>
+          <p className="text-sm text-gray-500 mt-1">和大家一起探讨 AI 保险工具</p>
+        </div>
+      </div>
+    </>
+  )
   )
 }
 
