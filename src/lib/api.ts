@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase'
 import { mockTools, mockLogs, mockRequests, mockConfig } from './mockData'
-import type { Tool, Log, Request, SiteConfig, Suggestion } from '../types'
+import type { Tool, Log, Request, RequestReply, SiteConfig, Suggestion } from '../types'
 
 // --- Tools ---
 
@@ -91,6 +91,34 @@ export async function submitRequest(payload: {
 export async function voteForRequest(id: string): Promise<void> {
   if (!isSupabaseConfigured()) return
   await supabase.rpc('increment_request_vote', { request_id: id })
+}
+
+// --- Request Replies ---
+
+export async function getAllReplies(): Promise<RequestReply[]> {
+  if (!isSupabaseConfigured()) return []
+  const { data, error } = await supabase.from('request_replies').select('*').order('created_at', { ascending: true })
+  if (error) { console.error('getAllReplies:', error.message); return [] }
+  return data || []
+}
+
+export async function submitReply(requestId: string, content: string): Promise<{ success: boolean; data?: RequestReply; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: false, error: 'Supabase 未配置' }
+  const { data, error } = await supabase.from('request_replies').insert([{ request_id: requestId, content }]).select().single()
+  if (error) return { success: false, error: error.message }
+  return { success: true, data }
+}
+
+export async function updateReply(id: string, content: string): Promise<{ success: boolean; data?: RequestReply; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: false, error: 'Supabase 未配置' }
+  const { data, error } = await supabase.from('request_replies').update({ content, updated_at: new Date().toISOString() }).eq('id', id).select().single()
+  if (error) return { success: false, error: error.message }
+  return { success: true, data }
+}
+
+export async function deleteReply(id: string): Promise<void> {
+  if (!isSupabaseConfigured()) return
+  await supabase.from('request_replies').delete().eq('id', id)
 }
 
 // --- Suggestions ---

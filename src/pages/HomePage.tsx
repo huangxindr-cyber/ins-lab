@@ -3,24 +3,26 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, Bell, CheckCircle, Loader2 } from 'lucide-react'
 import ToolCard from '../components/ToolCard'
 import RequestCard from '../components/RequestCard'
-import type { Tool, Log, Request, SiteConfig } from '../types'
-import { getTools, getLogs, getRequests, getSiteConfig, submitRequest, subscribe, calcExperimentDays, getTotalSuggestionsCount } from '../lib/api'
+import type { Tool, Log, Request, SiteConfig, RequestReply } from '../types'
+import { getTools, getLogs, getRequests, getSiteConfig, submitRequest, subscribe, calcExperimentDays, getTotalSuggestionsCount, getAllReplies } from '../lib/api'
 
 export default function HomePage() {
   const [tools, setTools] = useState<Tool[]>([])
   const [logs, setLogs] = useState<Log[]>([])
   const [requests, setRequests] = useState<Request[]>([])
+  const [replies, setReplies] = useState<RequestReply[]>([])
   const [config, setConfig] = useState<SiteConfig | null>(null)
   const [suggestionCount, setSuggestionCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([getTools(), getLogs(5), getRequests(), getSiteConfig(), getTotalSuggestionsCount()]).then(([t, l, r, c, sc]) => {
+    Promise.all([getTools(), getLogs(5), getRequests(), getSiteConfig(), getTotalSuggestionsCount(), getAllReplies()]).then(([t, l, r, c, sc, rep]) => {
       setTools(t)
       setLogs(l)
       setRequests(r)
       setConfig(c)
       setSuggestionCount(sc)
+      setReplies(rep)
       setLoading(false)
     })
   }, [])
@@ -59,7 +61,7 @@ export default function HomePage() {
           {/* 右列：需求表单 + 精选需求 */}
           <div className="lg:col-span-2 border border-gray-200 rounded-2xl p-5 space-y-6 lg:sticky lg:top-20">
             <RequestFormSection />
-            {requests.some(r => r.is_featured) && <FeaturedRequestsSection requests={requests.filter(r => r.is_featured)} />}
+            {requests.some(r => r.is_featured) && <FeaturedRequestsSection requests={requests.filter(r => r.is_featured)} replies={replies} />}
           </div>
 
         </div>
@@ -286,7 +288,7 @@ function RequestFormSection() {
   )
 }
 
-function FeaturedRequestsSection({ requests }: { requests: Request[] }) {
+function FeaturedRequestsSection({ requests, replies }: { requests: Request[]; replies: RequestReply[] }) {
   const [localRequests, setLocalRequests] = useState(requests)
   const handleVote = (id: string) => {
     setLocalRequests(prev => prev.map(r => r.id === id ? { ...r, vote_count: r.vote_count + 1 } : r))
@@ -300,7 +302,7 @@ function FeaturedRequestsSection({ requests }: { requests: Request[] }) {
         </Link>
       </div>
       <div className="space-y-3">
-        {localRequests.map(r => <RequestCard key={r.id} request={r} onVote={handleVote} />)}
+        {localRequests.map(r => <RequestCard key={r.id} request={r} onVote={handleVote} replies={replies.filter(rep => rep.request_id === r.id)} />)}
       </div>
     </div>
   )

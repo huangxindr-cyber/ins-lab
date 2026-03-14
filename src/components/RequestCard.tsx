@@ -1,10 +1,11 @@
-import { ThumbsUp, Star, UserRound, Crown, User, Tag } from 'lucide-react'
-import type { Request } from '../types'
+import { ThumbsUp, Star, UserRound, Crown, User, Tag, MessageCircle } from 'lucide-react'
+import type { Request, RequestReply } from '../types'
 import { voteForRequest } from '../lib/api'
 
 interface RequestCardProps {
   request: Request
   onVote?: (id: string) => void
+  replies?: RequestReply[]
 }
 
 const ROLES = ['保险代理人', '保险经纪人', '同业团队负责人', '客户', '其他']
@@ -28,7 +29,7 @@ const roleStyle: Record<string, { icon: React.ReactNode; bg: string; tag: string
 }
 const defaultStyle = { icon: <User size={14} />, bg: 'bg-gray-300', tag: '' }
 
-export default function RequestCard({ request, onVote }: RequestCardProps) {
+export default function RequestCard({ request, onVote, replies }: RequestCardProps) {
   const handleVote = async () => {
     await voteForRequest(request.id)
     onVote?.(request.id)
@@ -44,13 +45,10 @@ export default function RequestCard({ request, onVote }: RequestCardProps) {
       {/* 用户信息行 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {/* 角色图标头像 */}
           <span className={`w-7 h-7 rounded-full ${style.bg} flex items-center justify-center text-white shrink-0`}>
             {style.icon}
           </span>
-          {/* 昵称 */}
           <span className="text-sm font-bold text-gray-900">{displayName}</span>
-          {/* 角色标签 */}
           {role && (
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${style.tag}`}>
               {role}
@@ -89,6 +87,22 @@ export default function RequestCard({ request, onVote }: RequestCardProps) {
           </div>
         )}
       </div>
+
+      {/* 作者回复 */}
+      {replies && replies.length > 0 && (
+        <div className="space-y-2">
+          {replies.map(reply => (
+            <div key={reply.id} className="bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5">
+              <div className="flex items-center gap-1.5 mb-1">
+                <MessageCircle size={11} className="text-amber-500" />
+                <span className="text-xs font-semibold text-amber-700">作者回复</span>
+                <span className="text-xs text-amber-400">{new Date(reply.created_at).toLocaleDateString('zh-CN')}</span>
+              </div>
+              <p className="text-sm text-amber-900 leading-relaxed">{reply.content}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* 底部投票 */}
       <div className="flex justify-end pt-2 border-t border-gray-50">

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { LogOut, Loader2, Plus, Trash2, Star, StarOff, CheckCircle, Pencil, X, BookOpen } from 'lucide-react'
+import { LogOut, Loader2, Plus, Trash2, Star, StarOff, CheckCircle, Pencil, X, BookOpen, MessageCircle } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import type { Tool, Log, Request, Subscription } from '../types'
+import type { Tool, Log, Request, RequestReply, Subscription } from '../types'
+import { submitReply, updateReply, deleteReply, getAllReplies } from '../lib/api'
 
 type Tab = 'tools' | 'logs' | 'requests' | 'subscriptions'
 
@@ -622,11 +623,16 @@ function parseNickname(nickname: string | null): { role: string | null; name: st
 
 function AdminRequests() {
   const [requests, setRequests] = useState<Request[]>([])
+  const [replies, setReplies] = useState<RequestReply[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from('requests').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+    Promise.all([
+      supabase.from('requests').select('*').order('created_at', { ascending: false }),
+      getAllReplies(),
+    ]).then(([{ data }, reps]) => {
       setRequests(data || [])
+      setReplies(reps)
       setLoading(false)
     })
   }, [])
@@ -704,6 +710,15 @@ function AdminRequests() {
                 </div>
               )}
             </div>
+
+            {/* 回复管理 */}
+            <ReplyManager
+              requestId={req.id}
+              replies={replies.filter(rep => rep.request_id === req.id)}
+              onAdd={rep => setReplies(prev => [...prev, rep])}
+              onUpdate={rep => setReplies(prev => prev.map(r => r.id === rep.id ? rep : r))}
+              onDelete={id => setReplies(prev => prev.filter(r => r.id !== id))}
+            />
           </div>
         ))}
       </div>
@@ -711,23 +726,135 @@ function AdminRequests() {
   )
 }
 
+function ReplyManager({ requestId, replies, onAdd, onUpdate, onDelete }: {
+  requestId: string
+  replies: RequestReply[]
+  onAdd: (r: RequestReply) => void
+  onUpdate: (r: RequestReply) => void
+  onDelete: (id: string) => void
+}) {
+  const [showForm, setShowForm] = useState(false)
+  const [content, setContent] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editContent, setEditContent] = useState('')
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!content.trim()) return
+    setSaving(true)
+    const res = await submitReply(requestId, content)
+    if (res.success && res.data) {
+      onAdd(res.data)
+      setContent('')
+      setShowForm(false)
+    }
+    setSaving(false)
+  }
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingId || !editContent.trim()) return
+    setSaving(true)
+    const res = await updateReply(editingId, editContent)
+    if (res.success && res.data) {
+      onUpdate(res.data)
+      setEditingId(null)
+    }
+    setSaving(false)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('确认删除此回复？')) return
+    await deleteReply(id)
+    onDelete(id)
+  }
+
+  const fieldCls = "w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200 resize-none"
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-100">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-medium text-amber-600 flex items-center gap-1">
+          <MessageCircle size={11} /> 作者回复 {replies.length > 0 && `(${replies.length})`}
+        </span>
+        <button onClick={() => { setShowForm(!showForm); setEditingId(null) }} className="text-xs text-amber-600 hover:text-amber-700 hover:underline">
+          {showForm ? '收起' : '+ 添加回复'}
+        </button>
+      </div>
+
+      {/* 已有回复列表 */}
+      {replies.length > 0 && (
+        <div className="space-y-2 mb-2">
+          {replies.map(rep => (
+            <div key={rep.id}>
+              {editingId === rep.id ? (
+                <form onSubmit={handleEdit} className="bg-amber-50 rounded-lg p-3 space-y-2">
+                  <textarea required value={editContent} onChange={e => setEditContent(e.target.value)} rows={2} className={fieldCls} />
+                  <div className="flex gap-2">
+                    <button type="submit" disabled={saving} className="px-3 py-1.5 bg-amber-500 text-white text-xs rounded-lg hover:bg-amber-600 disabled:opacity-50 flex items-center gap-1">
+                      {saving && <Loader2 size={10} className="animate-spin" />} 保存
+                    </button>
+                    <button type="button" onClick={() => setEditingId(null)} className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg">取消</button>
+                  </div>
+                </form>
+              ) : (
+                <div className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 flex items-start gap-2">
+                  <p className="text-xs text-amber-900 flex-1 leading-relaxed">{rep.content}</p>
+                  <span className="text-xs text-amber-400 shrink-0">{new Date(rep.created_at).toLocaleDateString('zh-CN')}</span>
+                  <button onClick={() => { setEditingId(rep.id); setEditContent(rep.content); setShowForm(false) }} className="text-amber-300 hover:text-amber-600 shrink-0"><Pencil size={12} /></button>
+                  <button onClick={() => handleDelete(rep.id)} className="text-amber-300 hover:text-red-500 shrink-0"><Trash2 size={12} /></button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 新增回复表单 */}
+      {showForm && (
+        <form onSubmit={handleAdd} className="space-y-2">
+          <textarea required value={content} onChange={e => setContent(e.target.value)} rows={2} placeholder="输入回复内容..." className={fieldCls} />
+          <div className="flex gap-2">
+            <button type="submit" disabled={saving} className="px-3 py-1.5 bg-amber-500 text-white text-xs rounded-lg hover:bg-amber-600 disabled:opacity-50 flex items-center gap-1">
+              {saving && <Loader2 size={10} className="animate-spin" />} 发布回复
+            </button>
+            <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg">取消</button>
+          </div>
+        </form>
+      )}
+    </div>
+  )
+}
+
 function AdminSubscriptions() {
   const [subs, setSubs] = useState<Subscription[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
 
   useEffect(() => {
-    supabase.from('subscriptions').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+    supabase.from('subscriptions').select('*').order('created_at', { ascending: false }).then(({ data, error }) => {
+      if (error) setLoadError(error.message)
       setSubs(data || [])
       setLoading(false)
     })
   }, [])
 
-  if (loading) return <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-indigo-500" /></div>
+  if (loading) return <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-teal-500" /></div>
 
   return (
     <div>
       <h2 className="font-semibold text-gray-900 mb-4">订阅列表（{subs.length}人）</h2>
-      {subs.length === 0 ? (
+      {loadError && (
+        <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800 space-y-2">
+          <p className="font-medium">加载失败：{loadError}</p>
+          <p className="text-xs text-amber-700">可能是 subscriptions 表缺少查询权限，请在 Supabase SQL Editor 执行：</p>
+          <code className="block text-xs bg-amber-100 px-3 py-2 rounded-lg">
+            CREATE POLICY "Auth read subscriptions" ON subscriptions FOR SELECT USING (auth.role() = 'authenticated');
+          </code>
+        </div>
+      )}
+      {subs.length === 0 && !loadError ? (
         <div className="text-center py-10 text-gray-400">暂无订阅</div>
       ) : (
         <div className="space-y-2">

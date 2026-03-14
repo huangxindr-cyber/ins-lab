@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react'
 import { CheckCircle, Loader2 } from 'lucide-react'
 import RequestCard from '../components/RequestCard'
-import type { Request } from '../types'
-import { getRequests, submitRequest } from '../lib/api'
+import type { Request, RequestReply } from '../types'
+import { getRequests, submitRequest, getAllReplies } from '../lib/api'
 
 export default function RequestsPage() {
   const [requests, setRequests] = useState<Request[]>([])
+  const [replies, setReplies] = useState<RequestReply[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getRequests().then(r => { setRequests(r); setLoading(false) })
+    Promise.all([getRequests(), getAllReplies()]).then(([r, rep]) => {
+      setRequests(r)
+      setReplies(rep)
+      setLoading(false)
+    })
   }, [])
 
   const handleVote = (id: string) => {
@@ -36,7 +41,7 @@ export default function RequestsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {requests.map(r => <RequestCard key={r.id} request={r} onVote={handleVote} />)}
+                {requests.map(r => <RequestCard key={r.id} request={r} onVote={handleVote} replies={replies.filter(rep => rep.request_id === r.id)} />)}
               </div>
             )}
           </div>

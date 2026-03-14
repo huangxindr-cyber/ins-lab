@@ -40,6 +40,14 @@ export interface Request {
   created_at: string
 }
 
+export interface RequestReply {
+  id: string
+  request_id: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+
 export interface Suggestion {
   id: string
   tool_id: string
