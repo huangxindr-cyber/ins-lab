@@ -354,9 +354,11 @@ function ToolLogManager({ toolId, toolName }: { toolId: string; toolName: string
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    const { data } = await supabase.from('logs').insert([{ ...form, tool_id: toolId }]).select().single()
-    if (data) {
-      setLogs(prev => [data, ...prev])
+    const { data, error } = await supabase.from('logs').insert([{ ...form, tool_id: toolId }]).select().single()
+    if (error) {
+      alert(`发布失败：${error.message}`)
+    } else {
+      setLogs(prev => [data ?? { ...form, id: Date.now().toString(), tool_id: toolId, created_at: new Date().toISOString() } as Log, ...prev])
       setShowForm(false)
       setForm({ date: '', title: '', content: '', type: 'daily' })
     }
@@ -493,8 +495,14 @@ function AdminLogs() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    const { data } = await supabase.from('logs').insert([form]).select().single()
-    if (data) { setLogs(prev => [data, ...prev]); setShowForm(false); setForm({ date: '', title: '', content: '', type: 'daily' }) }
+    const { data, error } = await supabase.from('logs').insert([form]).select().single()
+    if (error) {
+      alert(`发布失败：${error.message}`)
+    } else {
+      setLogs(prev => [data ?? { ...form, id: Date.now().toString(), tool_id: null, created_at: new Date().toISOString() } as Log, ...prev])
+      setShowForm(false)
+      setForm({ date: '', title: '', content: '', type: 'daily' })
+    }
     setSaving(false)
   }
 
