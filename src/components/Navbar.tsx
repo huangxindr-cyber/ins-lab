@@ -16,7 +16,7 @@ export default function Navbar() {
         <Link to="/" className="flex items-center gap-2 font-bold text-teal-600">
           <FlaskConical size={22} />
           <span className="text-lg">AI保险实验室</span>
-          <span className="text-xs font-normal text-gray-400 hidden sm:inline">AI Insurance Lab</span>
+          <span className="text-[11px] font-medium text-teal-400 leading-none">AI Insurance Lab</span>
         </Link>
 
         {/* Desktop nav only */}

@@ -55,7 +55,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {logs.length > 0 && <LogsSection logs={logs} />}
+      {logs.length > 0 && <div className="hidden md:block"><LogsSection logs={logs} /></div>}
       <SubscribeSection />
     </div>
   )

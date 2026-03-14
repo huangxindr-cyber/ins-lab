@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ThumbsUp, Star, UserRound, Crown, User, Tag, MessageCircle } from 'lucide-react'
 import type { Request, RequestReply } from '../types'
-import { voteForRequest } from '../lib/api'
+import { voteForRequest, unvoteForRequest } from '../lib/api'
 
 interface RequestCardProps {
   request: Request
@@ -47,6 +47,12 @@ function markRequestVoted(id: string) {
     localStorage.setItem('voted_requests', JSON.stringify([...arr, id]))
   } catch {}
 }
+function unmarkRequestVoted(id: string) {
+  try {
+    const arr = JSON.parse(localStorage.getItem('voted_requests') || '[]') as string[]
+    localStorage.setItem('voted_requests', JSON.stringify(arr.filter((v: string) => v !== id)))
+  } catch {}
+}
 
 export default function RequestCard({ request, onVote, replies }: RequestCardProps) {
   const [voted, setVoted] = useState(() => isRequestVoted(request.id))
@@ -54,14 +60,20 @@ export default function RequestCard({ request, onVote, replies }: RequestCardPro
   const [bumping, setBumping] = useState(false)
 
   const handleVote = async () => {
-    if (voted) return
     setBumping(true)
     setTimeout(() => setBumping(false), 400)
-    setVoted(true)
-    setLocalCount(c => c + 1)
-    markRequestVoted(request.id)
-    await voteForRequest(request.id)
-    onVote?.(request.id)
+    if (voted) {
+      setVoted(false)
+      setLocalCount(c => Math.max(0, c - 1))
+      unmarkRequestVoted(request.id)
+      await unvoteForRequest(request.id)
+    } else {
+      setVoted(true)
+      setLocalCount(c => c + 1)
+      markRequestVoted(request.id)
+      await voteForRequest(request.id)
+      onVote?.(request.id)
+    }
   }
 
   const { role, name } = parseNickname(request.nickname)
@@ -146,7 +158,7 @@ export default function RequestCard({ request, onVote, replies }: RequestCardPro
           disabled={voted}
           className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
             voted
-              ? 'bg-teal-100 text-teal-500 cursor-default'
+              ? 'bg-teal-100 text-teal-600 hover:bg-teal-200'
               : 'bg-teal-50 text-teal-600 hover:bg-teal-100'
           } ${bumping ? 'scale-95' : 'scale-100'}`}
         >

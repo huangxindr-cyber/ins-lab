@@ -28,6 +28,11 @@ export async function voteForTool(id: string): Promise<void> {
   await supabase.rpc('increment_tool_vote', { tool_id: id })
 }
 
+export async function unvoteForTool(id: string): Promise<void> {
+  if (!isSupabaseConfigured()) return
+  await supabase.rpc('decrement_tool_vote', { tool_id: id })
+}
+
 // --- Logs ---
 
 export async function getLogs(limit?: number): Promise<Log[]> {
@@ -91,6 +96,11 @@ export async function submitRequest(payload: {
 export async function voteForRequest(id: string): Promise<void> {
   if (!isSupabaseConfigured()) return
   await supabase.rpc('increment_request_vote', { request_id: id })
+}
+
+export async function unvoteForRequest(id: string): Promise<void> {
+  if (!isSupabaseConfigured()) return
+  await supabase.rpc('decrement_request_vote', { request_id: id })
 }
 
 // --- Request Replies ---

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
 import { FlaskConical, MessageSquare, BookOpen } from 'lucide-react'
 import Navbar from './components/Navbar'
@@ -8,9 +9,16 @@ import RequestsPage from './pages/RequestsPage'
 import LogsPage from './pages/LogsPage'
 import AdminPage from './pages/AdminPage'
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Navbar />
       <Routes>
         <Route path="/" element={<HomePage />} />

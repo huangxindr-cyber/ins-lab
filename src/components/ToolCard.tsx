@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ExternalLink, FileText, MessageSquare, ThumbsUp } from 'lucide-react'
 import type { Tool } from '../types'
-import { incrementTryCount, voteForTool } from '../lib/api'
+import { incrementTryCount, voteForTool, unvoteForTool } from '../lib/api'
 
 const statusConfig = {
   completed: { label: '已上线', className: 'bg-teal-50 text-teal-700', border: 'border-teal-200 hover:border-teal-300', notesCls: 'bg-teal-50 text-teal-600', numCls: 'text-teal-500' },
@@ -17,6 +17,12 @@ function markToolVoted(id: string) {
   try {
     const arr = JSON.parse(localStorage.getItem('voted_tools') || '[]') as string[]
     localStorage.setItem('voted_tools', JSON.stringify([...arr, id]))
+  } catch {}
+}
+function unmarkToolVoted(id: string) {
+  try {
+    const arr = JSON.parse(localStorage.getItem('voted_tools') || '[]') as string[]
+    localStorage.setItem('voted_tools', JSON.stringify(arr.filter((v: string) => v !== id)))
   } catch {}
 }
 
@@ -40,14 +46,20 @@ export default function ToolCard({ tool, onVote }: ToolCardProps) {
 
   const handleVote = async (e: React.MouseEvent) => {
     e.preventDefault()
-    if (voted) return
     setBumping(true)
     setTimeout(() => setBumping(false), 400)
-    setVoted(true)
-    setLocalCount(c => c + 1)
-    markToolVoted(tool.id)
-    await voteForTool(tool.id)
-    onVote?.(tool.id)
+    if (voted) {
+      setVoted(false)
+      setLocalCount(c => Math.max(0, c - 1))
+      unmarkToolVoted(tool.id)
+      await unvoteForTool(tool.id)
+    } else {
+      setVoted(true)
+      setLocalCount(c => c + 1)
+      markToolVoted(tool.id)
+      await voteForTool(tool.id)
+      onVote?.(tool.id)
+    }
   }
 
   return (
@@ -94,14 +106,13 @@ export default function ToolCard({ tool, onVote }: ToolCardProps) {
         ) : tool.status === 'upcoming' ? (
           <button
             onClick={handleVote}
-            disabled={voted}
             className={`w-full flex items-center justify-center gap-1.5 py-2 text-sm font-medium rounded-xl transition-all duration-200 ${
               voted
-                ? 'bg-indigo-100 text-indigo-400 cursor-default'
+                ? 'bg-indigo-100 text-indigo-500 hover:bg-indigo-200'
                 : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
             } ${bumping ? 'scale-95' : 'scale-100'}`}
           >
-            <ThumbsUp size={13} className={voted ? 'fill-indigo-400' : ''} />
+            <ThumbsUp size={13} className={voted ? 'fill-indigo-500' : ''} />
             {voted ? `已支持 · ${localCount}` : `投票支持${localCount > 0 ? ` · ${localCount}` : ''}`}
           </button>
         ) : null}
