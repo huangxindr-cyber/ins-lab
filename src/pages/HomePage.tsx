@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Bell, CheckCircle, Loader2 } from 'lucide-react'
+import { ArrowRight, Bell, CheckCircle, Loader2, X, Users } from 'lucide-react'
 import ToolCard from '../components/ToolCard'
 import type { Tool, Log, SiteConfig } from '../types'
 import { getTools, getLogs, getRequests, getSiteConfig, subscribe, calcExperimentDays, getTotalSuggestionsCount } from '../lib/api'
@@ -62,21 +62,60 @@ export default function HomePage() {
 }
 
 function WechatQRWidget() {
+  const [mobileOpen, setMobileOpen] = useState(false)
+
   return (
     <>
-      {/* 桌面端：左侧固定悬浮 */}
-      <div className="hidden md:flex fixed top-20 left-4 z-40 flex-col items-center bg-white rounded-2xl shadow-lg border border-gray-100 p-4 w-48">
-        <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-full rounded-xl object-cover" />
-        <p className="text-center text-gray-700 text-sm font-medium mt-3">入群讨论</p>
-      </div>
-      {/* 移动端：顶部内嵌横排（仅首页/工具页显示） */}
-      <div className="md:hidden flex items-center gap-4 bg-white border border-gray-100 shadow-sm rounded-2xl px-4 py-3 mx-4 mt-3">
-        <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-24 h-24 rounded-xl object-cover flex-shrink-0" />
-        <div>
-          <p className="text-base font-semibold text-gray-800">扫码入群讨论</p>
-          <p className="text-sm text-gray-500 mt-1">和大家一起探讨 AI 保险工具</p>
-          <p className="text-xs text-gray-400 mt-0.5">长按图片转发二维码</p>
+      {/* 桌面端：左侧悬浮社群卡片 */}
+      <div className="hidden md:block fixed top-20 left-4 z-40 w-44">
+        <div className="bg-gradient-to-b from-teal-500 to-teal-600 rounded-2xl shadow-lg p-4 text-white">
+          <div className="flex items-center gap-1.5 mb-3">
+            <Users size={14} className="opacity-80" />
+            <span className="text-xs font-semibold opacity-90">加入实验讨论群</span>
+          </div>
+          <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-full rounded-xl object-cover border-2 border-white/20" />
+          <p className="text-xs text-teal-100 mt-3 leading-relaxed text-center">扫码加入，第一时间获取新工具</p>
         </div>
+      </div>
+
+      {/* 移动端：底部浮动按钮 + 弹出卡片（在底部导航上方） */}
+      <div className="md:hidden">
+        {/* 浮动触发按钮 */}
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="fixed bottom-20 right-4 z-40 flex items-center gap-1.5 bg-teal-500 text-white text-sm font-medium px-4 py-2.5 rounded-full shadow-lg shadow-teal-200 hover:bg-teal-600 transition-colors"
+        >
+          <Users size={15} />
+          入群讨论
+        </button>
+
+        {/* 遮罩 + 弹出卡片 */}
+        {mobileOpen && (
+          <div className="fixed inset-0 z-50 flex items-end" onClick={() => setMobileOpen(false)}>
+            <div
+              className="w-full bg-white rounded-t-3xl shadow-2xl p-6 pb-10"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="font-bold text-gray-900 text-lg">加入实验讨论群</h3>
+                  <p className="text-sm text-gray-500 mt-0.5">和同行一起探讨 AI 保险工具</p>
+                </div>
+                <button onClick={() => setMobileOpen(false)} className="p-2 rounded-full bg-gray-100 text-gray-500">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="flex justify-center">
+                <div className="bg-gradient-to-b from-teal-50 to-white p-4 rounded-2xl border border-teal-100">
+                  <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-48 h-48 object-cover rounded-xl" />
+                </div>
+              </div>
+              <p className="text-center text-xs text-gray-400 mt-4 leading-relaxed">
+                微信扫码 / 长按识别二维码<br />第一时间获取新工具上线通知
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </>
   )
@@ -93,8 +132,8 @@ function HeroSection({ config }: { config: SiteConfig | null }) {
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3 leading-tight">
           {config?.hero_title || 'AI保险实验室'}
         </h1>
-        <p className="text-base text-gray-500 mb-8 whitespace-nowrap">
-          {config?.hero_subtitle || '100天，用AI做10个真实可用的保险小工具。从想法到开发到上线，全程公开记录。'}
+        <p className="text-sm md:text-base text-gray-500 mb-8 leading-relaxed whitespace-pre-line">
+          {config?.hero_subtitle || '100天，用AI做10个真实可用的保险小工具。\n从想法到开发到上线，全程公开记录。'}
         </p>
       </div>
     </section>
@@ -104,7 +143,6 @@ function HeroSection({ config }: { config: SiteConfig | null }) {
 function ProgressSection({ days, completedCount, requestCount, suggestionCount }: { days: number; completedCount: number; requestCount: number; suggestionCount: number }) {
   const stats = [
     { label: '完成工具', value: `${completedCount}/10` },
-    { label: '实验天数', value: `${days}/100` },
     { label: '用户建议', value: `${suggestionCount}` },
     { label: '用户需求', value: `${requestCount}` },
   ]
@@ -112,7 +150,7 @@ function ProgressSection({ days, completedCount, requestCount, suggestionCount }
   return (
     <section className="pt-3 pb-8 px-4 bg-white">
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-4 gap-3 md:gap-4 mb-4">
+        <div className="grid grid-cols-3 gap-3 md:gap-4 mb-4">
           {stats.map(s => (
             <div key={s.label} className="bg-teal-50 rounded-xl p-4 text-center">
               <div className="text-2xl md:text-3xl font-bold text-teal-600 leading-none">{s.value}</div>
