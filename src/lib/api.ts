@@ -79,13 +79,13 @@ export async function submitRequest(payload: {
   willing_to_try?: string
   nickname?: string
   contact?: string
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; data?: Request; error?: string }> {
   if (!isSupabaseConfigured()) {
     return { success: true }
   }
-  const { error } = await supabase.from('requests').insert([{ ...payload, vote_count: 0, is_featured: false }])
+  const { data, error } = await supabase.from('requests').insert([{ ...payload, vote_count: 0, is_featured: false }]).select().single()
   if (error) return { success: false, error: error.message }
-  return { success: true }
+  return { success: true, data: data as Request }
 }
 
 export async function voteForRequest(id: string): Promise<void> {

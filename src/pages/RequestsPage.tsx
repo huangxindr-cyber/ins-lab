@@ -11,7 +11,13 @@ export default function RequestsPage() {
 
   useEffect(() => {
     Promise.all([getRequests(), getAllReplies()]).then(([r, rep]) => {
-      setRequests(r)
+      // 精选排前，其余按时间倒序
+      const sorted = [...r].sort((a, b) => {
+        if (a.is_featured && !b.is_featured) return -1
+        if (!a.is_featured && b.is_featured) return 1
+        return 0
+      })
+      setRequests(sorted)
       setReplies(rep)
       setLoading(false)
     })
@@ -21,16 +27,29 @@ export default function RequestsPage() {
     setRequests(prev => prev.map(r => r.id === id ? { ...r, vote_count: r.vote_count + 1 } : r))
   }
 
-  return (
-    <div className="pt-14 min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">工具需求</h1>
-        <p className="text-gray-500 mb-2">这里收集的是「你希望做出什么工具」的新想法。</p>
-        <p className="text-gray-400 text-sm mb-10">如果你对已有工具有改进建议，请在对应工具详情页提交「建议」。</p>
+  const handleNewRequest = (req: Request) => {
+    setRequests(prev => [req, ...prev])
+  }
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Requests list */}
-          <div className="lg:col-span-2">
+  return (
+    <div className="pt-14 pb-16 md:pb-0 min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">工具需求</h1>
+        <p className="text-gray-500 text-sm mb-1">这里收集的是「你希望做出什么工具」的新想法。</p>
+        <p className="text-gray-400 text-xs mb-6">对已有工具有改进建议？请到工具详情页提交「建议」。</p>
+
+        {/* 移动端：表单在上，列表在下；桌面端：左列表右表单 */}
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8 items-start">
+
+          {/* 提交表单：移动端先渲染（排在上方），桌面端右侧 */}
+          <div className="w-full lg:col-span-1 lg:col-start-3 lg:row-start-1 lg:sticky lg:top-20">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <RequestFormSection onSuccess={handleNewRequest} />
+            </div>
+          </div>
+
+          {/* 需求列表：移动端后渲染（排在下方），桌面端左侧 */}
+          <div className="w-full lg:col-span-2 lg:col-start-1 lg:row-start-1">
             {loading ? (
               <div className="flex justify-center py-20">
                 <Loader2 size={32} className="animate-spin text-teal-500" />
@@ -42,24 +61,25 @@ export default function RequestsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {requests.map(r => <RequestCard key={r.id} request={r} onVote={handleVote} replies={replies.filter(rep => rep.request_id === r.id)} />)}
+                {requests.map(r => (
+                  <RequestCard
+                    key={r.id}
+                    request={r}
+                    onVote={handleVote}
+                    replies={replies.filter(rep => rep.request_id === r.id)}
+                  />
+                ))}
               </div>
             )}
           </div>
 
-          {/* Submit form */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sticky top-20">
-              <RequestFormSection />
-            </div>
-          </div>
         </div>
       </div>
     </div>
   )
 }
 
-function RequestFormSection() {
+function RequestFormSection({ onSuccess }: { onSuccess?: (req: Request) => void }) {
   const [form, setForm] = useState({ problem: '', current_solution: '', willing_to_try: '', role: '', name: '', contact: '' })
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -79,6 +99,7 @@ function RequestFormSection() {
     })
     if (res.success) {
       setStatus('success')
+      if (res.data) onSuccess?.(res.data)
       setForm({ problem: '', current_solution: '', willing_to_try: '', role: '', name: '', contact: '' })
     } else {
       setStatus('error')

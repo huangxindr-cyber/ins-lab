@@ -1,6 +1,5 @@
-import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, FlaskConical } from 'lucide-react'
+import { FlaskConical } from 'lucide-react'
 
 const navLinks = [
   { to: '/', label: '首页' },
@@ -9,7 +8,6 @@ const navLinks = [
 ]
 
 export default function Navbar() {
-  const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
 
   return (
@@ -21,7 +19,7 @@ export default function Navbar() {
           <span className="text-xs font-normal text-gray-400 hidden sm:inline">AI Insurance Lab</span>
         </Link>
 
-        {/* Desktop nav */}
+        {/* Desktop nav only */}
         <div className="hidden md:flex items-center gap-1">
           {navLinks.map(link => (
             <Link
@@ -37,35 +35,7 @@ export default function Navbar() {
             </Link>
           ))}
         </div>
-
-        {/* Mobile menu button */}
-        <button
-          className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
-          onClick={() => setOpen(!open)}
-        >
-          {open ? <X size={20} /> : <Menu size={20} />}
-        </button>
       </div>
-
-      {/* Mobile menu */}
-      {open && (
-        <div className="md:hidden bg-white border-t border-gray-100 px-4 py-3 flex flex-col gap-1">
-          {navLinks.map(link => (
-            <Link
-              key={link.to}
-              to={link.to}
-              onClick={() => setOpen(false)}
-              className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                pathname === link.to
-                  ? 'bg-teal-50 text-teal-600'
-                  : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      )}
     </nav>
   )
 }

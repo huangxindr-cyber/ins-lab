@@ -53,7 +53,7 @@ export default function ToolDetailPage() {
   const status = statusConfig[tool.status]
 
   return (
-    <div className="pt-14 min-h-screen bg-gray-50">
+    <div className="pt-14 pb-16 md:pb-0 min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
         <Link to="/" className="flex items-center gap-2 text-gray-500 hover:text-gray-700 text-sm mb-6">
           <ArrowLeft size={16} /> 返回首页
