@@ -621,6 +621,8 @@ function parseNickname(nickname: string | null): { role: string | null; name: st
   return { role: null, name: nickname }
 }
 
+const REQUEST_STATUSES = ['待评估', '考虑中', '已立项', '已实现', '暂不做'] as const
+
 function AdminRequests() {
   const [requests, setRequests] = useState<Request[]>([])
   const [replies, setReplies] = useState<RequestReply[]>([])
@@ -646,6 +648,11 @@ function AdminRequests() {
   const toggleFeatured = async (id: string, current: boolean) => {
     await supabase.from('requests').update({ is_featured: !current }).eq('id', id)
     setRequests(prev => prev.map(r => r.id === id ? { ...r, is_featured: !current } : r))
+  }
+
+  const handleStatusChange = async (id: string, status: string) => {
+    await supabase.from('requests').update({ status }).eq('id', id)
+    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: status as Request['status'] } : r))
   }
 
   if (loading) return <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-indigo-500" /></div>
@@ -678,6 +685,13 @@ function AdminRequests() {
                 {req.is_featured && <span className="text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">精选</span>}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
+                <select
+                  value={req.status || '待评估'}
+                  onChange={e => handleStatusChange(req.id, e.target.value)}
+                  className="text-xs px-2 py-1 rounded-lg border border-gray-200 focus:outline-none"
+                >
+                  {REQUEST_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
                 <button
                   onClick={() => toggleFeatured(req.id, req.is_featured)}
                   className={`p-1.5 rounded-lg transition-colors ${req.is_featured ? 'text-amber-500 bg-amber-50 hover:bg-amber-100' : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500'}`}

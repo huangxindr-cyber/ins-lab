@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ExternalLink, FileText, MessageSquare, ThumbsUp } from 'lucide-react'
 import type { Tool } from '../types'
@@ -9,6 +10,16 @@ const statusConfig = {
   upcoming: { label: '即将开发', className: 'bg-indigo-50 text-indigo-600', border: 'border-indigo-100 hover:border-indigo-200', notesCls: 'bg-indigo-50 text-indigo-600', numCls: 'text-indigo-400' },
 }
 
+function isToolVoted(id: string): boolean {
+  try { return (JSON.parse(localStorage.getItem('voted_tools') || '[]') as string[]).includes(id) } catch { return false }
+}
+function markToolVoted(id: string) {
+  try {
+    const arr = JSON.parse(localStorage.getItem('voted_tools') || '[]') as string[]
+    localStorage.setItem('voted_tools', JSON.stringify([...arr, id]))
+  } catch {}
+}
+
 interface ToolCardProps {
   tool: Tool
   onVote?: (id: string) => void
@@ -16,6 +27,9 @@ interface ToolCardProps {
 
 export default function ToolCard({ tool, onVote }: ToolCardProps) {
   const status = statusConfig[tool.status]
+  const [voted, setVoted] = useState(() => isToolVoted(tool.id))
+  const [localCount, setLocalCount] = useState(tool.vote_count)
+  const [bumping, setBumping] = useState(false)
 
   const handleEnter = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -26,6 +40,12 @@ export default function ToolCard({ tool, onVote }: ToolCardProps) {
 
   const handleVote = async (e: React.MouseEvent) => {
     e.preventDefault()
+    if (voted) return
+    setBumping(true)
+    setTimeout(() => setBumping(false), 400)
+    setVoted(true)
+    setLocalCount(c => c + 1)
+    markToolVoted(tool.id)
     await voteForTool(tool.id)
     onVote?.(tool.id)
   }
@@ -63,7 +83,6 @@ export default function ToolCard({ tool, onVote }: ToolCardProps) {
 
       {/* 底部按钮区 */}
       <div className="flex flex-col gap-2 mt-auto pt-2 border-t border-gray-50">
-        {/* 第一行：进入按钮 */}
         {tool.status === 'completed' ? (
           <button
             onClick={handleEnter}
@@ -75,10 +94,15 @@ export default function ToolCard({ tool, onVote }: ToolCardProps) {
         ) : tool.status === 'upcoming' ? (
           <button
             onClick={handleVote}
-            className="w-full flex items-center justify-center gap-1.5 py-2 bg-indigo-50 text-indigo-600 text-sm font-medium rounded-xl hover:bg-indigo-100 transition-colors"
+            disabled={voted}
+            className={`w-full flex items-center justify-center gap-1.5 py-2 text-sm font-medium rounded-xl transition-all duration-200 ${
+              voted
+                ? 'bg-indigo-100 text-indigo-400 cursor-default'
+                : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+            } ${bumping ? 'scale-95' : 'scale-100'}`}
           >
-            <ThumbsUp size={13} />
-            投票支持 {tool.vote_count > 0 && `· ${tool.vote_count}`}
+            <ThumbsUp size={13} className={voted ? 'fill-indigo-400' : ''} />
+            {voted ? `已支持 · ${localCount}` : `投票支持${localCount > 0 ? ` · ${localCount}` : ''}`}
           </button>
         ) : null}
 

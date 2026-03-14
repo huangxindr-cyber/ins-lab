@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ThumbsUp, Star, UserRound, Crown, User, Tag, MessageCircle } from 'lucide-react'
 import type { Request, RequestReply } from '../types'
 import { voteForRequest } from '../lib/api'
@@ -29,8 +30,36 @@ const roleStyle: Record<string, { icon: React.ReactNode; bg: string; tag: string
 }
 const defaultStyle = { icon: <User size={14} />, bg: 'bg-gray-300', tag: '' }
 
+const statusConfig: Record<string, { label: string; cls: string }> = {
+  '待评估': { label: '待评估', cls: 'bg-gray-100 text-gray-500' },
+  '考虑中': { label: '考虑中', cls: 'bg-blue-50 text-blue-600' },
+  '已立项': { label: '已立项', cls: 'bg-teal-50 text-teal-700' },
+  '已实现': { label: '已实现', cls: 'bg-green-50 text-green-700' },
+  '暂不做': { label: '暂不做', cls: 'bg-red-50 text-red-400' },
+}
+
+function isRequestVoted(id: string): boolean {
+  try { return (JSON.parse(localStorage.getItem('voted_requests') || '[]') as string[]).includes(id) } catch { return false }
+}
+function markRequestVoted(id: string) {
+  try {
+    const arr = JSON.parse(localStorage.getItem('voted_requests') || '[]') as string[]
+    localStorage.setItem('voted_requests', JSON.stringify([...arr, id]))
+  } catch {}
+}
+
 export default function RequestCard({ request, onVote, replies }: RequestCardProps) {
+  const [voted, setVoted] = useState(() => isRequestVoted(request.id))
+  const [localCount, setLocalCount] = useState(request.vote_count)
+  const [bumping, setBumping] = useState(false)
+
   const handleVote = async () => {
+    if (voted) return
+    setBumping(true)
+    setTimeout(() => setBumping(false), 400)
+    setVoted(true)
+    setLocalCount(c => c + 1)
+    markRequestVoted(request.id)
     await voteForRequest(request.id)
     onVote?.(request.id)
   }
@@ -38,13 +67,14 @@ export default function RequestCard({ request, onVote, replies }: RequestCardPro
   const { role, name } = parseNickname(request.nickname)
   const style = role ? (roleStyle[role] ?? defaultStyle) : defaultStyle
   const displayName = name || '匿名用户'
+  const reqStatus = request.status ? statusConfig[request.status] : null
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col gap-4">
 
       {/* 用户信息行 */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className={`w-7 h-7 rounded-full ${style.bg} flex items-center justify-center text-white shrink-0`}>
             {style.icon}
           </span>
@@ -56,6 +86,11 @@ export default function RequestCard({ request, onVote, replies }: RequestCardPro
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {reqStatus && request.status !== '待评估' && (
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${reqStatus.cls}`}>
+              {reqStatus.label}
+            </span>
+          )}
           {request.is_featured && (
             <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">
               <Star size={10} fill="currentColor" />
@@ -108,10 +143,15 @@ export default function RequestCard({ request, onVote, replies }: RequestCardPro
       <div className="flex justify-end pt-2 border-t border-gray-50">
         <button
           onClick={handleVote}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 text-teal-600 text-xs font-medium rounded-lg hover:bg-teal-100 transition-colors"
+          disabled={voted}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+            voted
+              ? 'bg-teal-100 text-teal-500 cursor-default'
+              : 'bg-teal-50 text-teal-600 hover:bg-teal-100'
+          } ${bumping ? 'scale-95' : 'scale-100'}`}
         >
-          <ThumbsUp size={11} />
-          支持 {request.vote_count > 0 && `· ${request.vote_count}`}
+          <ThumbsUp size={11} className={voted ? 'fill-teal-500' : ''} />
+          {voted ? `已支持 · ${localCount}` : `支持${localCount > 0 ? ` · ${localCount}` : ''}`}
         </button>
       </div>
     </div>

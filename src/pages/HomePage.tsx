@@ -133,15 +133,17 @@ function ProgressSection({ days, completedCount, requestCount, suggestionCount }
           ))}
         </div>
         <div className="bg-gray-50 rounded-xl px-4 py-3">
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-gray-400">实验进度</span>
-            <span className="text-xs text-gray-400">{days}%</span>
+            <span className="text-xs text-gray-400">{days}/100 天</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5">
-            <div
-              className="bg-gradient-to-r from-teal-400 to-cyan-400 h-1.5 rounded-full transition-all"
-              style={{ width: `${days}%` }}
-            ></div>
+          <div className="grid gap-[3px]" style={{ gridTemplateColumns: 'repeat(20, minmax(0, 1fr))' }}>
+            {Array.from({ length: 100 }, (_, i) => (
+              <div
+                key={i}
+                className={`aspect-square rounded-[2px] ${i < days ? 'bg-teal-400' : 'bg-gray-200'}`}
+              />
+            ))}
           </div>
         </div>
       </div>

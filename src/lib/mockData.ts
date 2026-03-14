@@ -146,6 +146,7 @@ export const mockRequests: Request[] = [
     contact: null,
     vote_count: 45,
     is_featured: true,
+    status: '考虑中',
     created_at: '2026-01-15T00:00:00Z',
   },
   {
@@ -157,6 +158,7 @@ export const mockRequests: Request[] = [
     contact: null,
     vote_count: 31,
     is_featured: true,
+    status: '待评估',
     created_at: '2026-01-18T00:00:00Z',
   },
   {
@@ -168,6 +170,7 @@ export const mockRequests: Request[] = [
     contact: 'wechat: xxxxx',
     vote_count: 18,
     is_featured: false,
+    status: '待评估',
     created_at: '2026-01-19T00:00:00Z',
   },
 ]

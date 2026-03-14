@@ -28,6 +28,8 @@ export interface Log {
   created_at: string
 }
 
+export type RequestStatus = '待评估' | '考虑中' | '已立项' | '已实现' | '暂不做'
+
 export interface Request {
   id: string
   problem: string
@@ -37,6 +39,7 @@ export interface Request {
   contact: string | null
   vote_count: number
   is_featured: boolean
+  status: RequestStatus
   created_at: string
 }
 

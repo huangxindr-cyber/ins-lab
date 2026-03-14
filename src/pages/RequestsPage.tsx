@@ -24,8 +24,9 @@ export default function RequestsPage() {
   return (
     <div className="pt-14 min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">用户需求</h1>
-        <p className="text-gray-500 mb-10">大家都在期待哪些保险 AI 工具？投票支持你最想要的</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">工具需求</h1>
+        <p className="text-gray-500 mb-2">这里收集的是「你希望做出什么工具」的新想法。</p>
+        <p className="text-gray-400 text-sm mb-10">如果你对已有工具有改进建议，请在对应工具详情页提交「建议」。</p>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Requests list */}
@@ -89,9 +90,12 @@ function RequestFormSection() {
 
   return (
     <div>
-      <h2 className="text-lg font-bold text-gray-900 leading-snug">一起做出真正有用的<br />AI保险工具</h2>
-      <p className="text-xs text-gray-400 mt-2 mb-6 leading-5">
-        写得越具体，我们越可能把这个工具做出来。<br />需求被采纳后，你可以永久免费使用。
+      <h2 className="text-lg font-bold text-gray-900 leading-snug">提交新工具需求</h2>
+      <p className="text-xs text-gray-400 mt-2 mb-1 leading-5">
+        有什么你希望 AI 帮你做的保险场景？写下来，写越具体越好。
+      </p>
+      <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mb-5 leading-5">
+        💡 对已有工具有改进意见？请到工具详情页提交「建议」
       </p>
 
       {status === 'success' ? (
