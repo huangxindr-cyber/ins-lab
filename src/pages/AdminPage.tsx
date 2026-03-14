@@ -374,19 +374,22 @@ function ToolLogManager({ toolId, toolName }: { toolId: string; toolName: string
     e.preventDefault()
     if (!editingLogId) return
     setSaving(true)
-    const { error } = await supabase.from('logs').update(editForm).eq('id', editingLogId)
-    if (!error) {
-      setLogs(prev => prev.map(l => l.id === editingLogId ? { ...l, ...editForm } as Log : l))
-      setEditingLogId(null)
-    } else {
+    const { data, error } = await supabase.from('logs').update(editForm).eq('id', editingLogId).select().single()
+    if (error) {
       alert(`保存失败：${error.message}`)
+    } else if (!data) {
+      alert('保存失败：没有权限修改此日志，请在 Supabase 添加 UPDATE 策略')
+    } else {
+      setLogs(prev => prev.map(l => l.id === editingLogId ? data as Log : l))
+      setEditingLogId(null)
     }
     setSaving(false)
   }
 
   const handleDelete = async (id: string) => {
     if (!confirm('确认删除此日志？')) return
-    await supabase.from('logs').delete().eq('id', id)
+    const { error } = await supabase.from('logs').delete().eq('id', id)
+    if (error) { alert(`删除失败：${error.message}`); return }
     setLogs(prev => prev.filter(l => l.id !== id))
     if (editingLogId === id) setEditingLogId(null)
   }
@@ -516,19 +519,22 @@ function AdminLogs() {
     e.preventDefault()
     if (!editingLogId) return
     setSaving(true)
-    const { error } = await supabase.from('logs').update(editForm).eq('id', editingLogId)
-    if (!error) {
-      setLogs(prev => prev.map(l => l.id === editingLogId ? { ...l, ...editForm } as Log : l))
-      setEditingLogId(null)
-    } else {
+    const { data, error } = await supabase.from('logs').update(editForm).eq('id', editingLogId).select().single()
+    if (error) {
       alert(`保存失败：${error.message}`)
+    } else if (!data) {
+      alert('保存失败：没有权限修改此日志，请在 Supabase 添加 UPDATE 策略')
+    } else {
+      setLogs(prev => prev.map(l => l.id === editingLogId ? data as Log : l))
+      setEditingLogId(null)
     }
     setSaving(false)
   }
 
   const handleDelete = async (id: string) => {
     if (!confirm('确认删除？')) return
-    await supabase.from('logs').delete().eq('id', id)
+    const { error } = await supabase.from('logs').delete().eq('id', id)
+    if (error) { alert(`删除失败：${error.message}`); return }
     setLogs(prev => prev.filter(l => l.id !== id))
     if (editingLogId === id) setEditingLogId(null)
   }
