@@ -14,6 +14,7 @@ export interface Tool {
   vote_count: number
   features: string | null
   how_to_use: string | null
+  notes: string | null
   created_at: string
 }
 
@@ -36,6 +37,14 @@ export interface Request {
   contact: string | null
   vote_count: number
   is_featured: boolean
+  created_at: string
+}
+
+export interface Suggestion {
+  id: string
+  tool_id: string
+  content: string
+  nickname: string | null
   created_at: string
 }
 

@@ -1,20 +1,20 @@
 import { supabase, isSupabaseConfigured } from './supabase'
 import { mockTools, mockLogs, mockRequests, mockConfig } from './mockData'
-import type { Tool, Log, Request, SiteConfig } from '../types'
+import type { Tool, Log, Request, SiteConfig, Suggestion } from '../types'
 
 // --- Tools ---
 
 export async function getTools(): Promise<Tool[]> {
   if (!isSupabaseConfigured()) return mockTools
   const { data, error } = await supabase.from('tools').select('*').order('number')
-  if (error) return mockTools
+  if (error) { console.error('getTools:', error.message); return [] }
   return data || []
 }
 
 export async function getToolById(id: string): Promise<Tool | null> {
   if (!isSupabaseConfigured()) return mockTools.find(t => t.id === id) || null
   const { data, error } = await supabase.from('tools').select('*').eq('id', id).single()
-  if (error) return null
+  if (error) { console.error('getToolById:', error.message); return null }
   return data
 }
 
@@ -37,7 +37,7 @@ export async function getLogs(limit?: number): Promise<Log[]> {
   let query = supabase.from('logs').select('*').order('date', { ascending: false })
   if (limit) query = query.limit(limit)
   const { data, error } = await query
-  if (error) return mockLogs
+  if (error) { console.error('getLogs:', error.message); return [] }
   return data || []
 }
 
@@ -57,7 +57,7 @@ export async function getRequests(): Promise<Request[]> {
     .select('*')
     .order('is_featured', { ascending: false })
     .order('vote_count', { ascending: false })
-  if (error) return mockRequests
+  if (error) { console.error('getRequests:', error.message); return [] }
   return data || []
 }
 
@@ -93,6 +93,33 @@ export async function voteForRequest(id: string): Promise<void> {
   await supabase.rpc('increment_request_vote', { request_id: id })
 }
 
+// --- Suggestions ---
+
+export async function getTotalSuggestionsCount(): Promise<number> {
+  if (!isSupabaseConfigured()) return 0
+  const { count, error } = await supabase.from('suggestions').select('*', { count: 'exact', head: true })
+  if (error) { console.error('getTotalSuggestionsCount:', error.message); return 0 }
+  return count || 0
+}
+
+export async function getSuggestions(toolId: string): Promise<Suggestion[]> {
+  if (!isSupabaseConfigured()) return []
+  const { data, error } = await supabase
+    .from('suggestions')
+    .select('*')
+    .eq('tool_id', toolId)
+    .order('created_at', { ascending: false })
+  if (error) { console.error('getSuggestions:', error.message); return [] }
+  return data || []
+}
+
+export async function submitSuggestion(toolId: string, content: string, nickname?: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true }
+  const { error } = await supabase.from('suggestions').insert([{ tool_id: toolId, content, nickname: nickname || null }])
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
 // --- Subscriptions ---
 
 export async function subscribe(contact: string): Promise<{ success: boolean; error?: string }> {
@@ -107,13 +134,16 @@ export async function subscribe(contact: string): Promise<{ success: boolean; er
 export async function getSiteConfig(): Promise<SiteConfig> {
   if (!isSupabaseConfigured()) return mockConfig
   const { data, error } = await supabase.from('site_config').select('*').single()
-  if (error) return mockConfig
+  if (error) { console.error('getSiteConfig:', error.message); return mockConfig }
   return data || mockConfig
 }
 
 export function calcExperimentDays(startDate: string): number {
-  const start = new Date(startDate)
+  // 用本地日期对比，避免时区偏差（3.14 = 第1天，3.15零点起 = 第2天）
+  const [y, m, d] = startDate.split('-').map(Number)
+  const start = new Date(y, m - 1, d)
   const now = new Date()
-  const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+  const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const diff = Math.floor((todayLocal.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
   return Math.min(Math.max(diff + 1, 1), 100)
 }

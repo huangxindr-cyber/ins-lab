@@ -19,7 +19,7 @@
 | 路由 | React Router DOM |
 | 图标 | Lucide React |
 | 后端/数据库 | Supabase（PostgreSQL + Auth） |
-| 部署 | 阿里云 ECS + 宝塔面板（静态托管） |
+| 部署 | 阿里云 ECS + 宝塔面板（静态托管）+ GitHub Actions 自动部署 |
 
 ---
 
@@ -31,7 +31,7 @@ ai-insurance-lab/
 │   ├── App.tsx                  # 路由配置
 │   ├── main.tsx                 # 入口
 │   ├── index.css                # 全局样式
-│   ├── types/index.ts           # 全局类型定义
+│   ├── types/index.ts           # 全局类型定义（Tool/Log/Request/Suggestion/Subscription/SiteConfig）
 │   ├── lib/
 │   │   ├── supabase.ts          # Supabase 客户端初始化
 │   │   ├── api.ts               # 所有数据操作函数
@@ -39,18 +39,18 @@ ai-insurance-lab/
 │   ├── components/
 │   │   ├── Navbar.tsx           # 顶部导航栏（含移动端汉堡菜单）
 │   │   ├── ToolCard.tsx         # 工具卡片组件
-│   │   └── RequestCard.tsx      # 需求卡片组件
+│   │   └── RequestCard.tsx      # 需求卡片组件（含角色图标和 role::name 解析）
 │   └── pages/
-│       ├── HomePage.tsx         # 首页（Hero、进度、工具分区、需求表单、订阅）
-│       ├── ToolsPage.tsx        # 全部工具页
-│       ├── ToolDetailPage.tsx   # 工具详情页
-│       ├── RequestsPage.tsx     # 用户需求页
+│       ├── HomePage.tsx         # 首页（Hero、进度统计、两列布局：左工具/右需求表单+精选需求、日志、订阅）
+│       ├── ToolDetailPage.tsx   # 工具详情页（两列：左工具信息/右建议表单+建议列表）
+│       ├── RequestsPage.tsx     # 用户需求页（左需求列表/右提交表单）
 │       ├── LogsPage.tsx         # 实验日志页
 │       └── AdminPage.tsx        # 后台管理（工具/日志/需求/订阅管理）
 ├── public/
 │   ├── favicon.svg
 │   ├── icons.svg
 │   └── wechat-qrcode.jpg        # 微信群二维码（左侧悬浮组件用）
+├── .github/workflows/deploy.yml # GitHub Actions 自动部署
 ├── dist/                        # 构建产物，部署到服务器的文件
 ├── index.html
 ├── vite.config.ts
@@ -65,11 +65,12 @@ ai-insurance-lab/
 | 路由 | 页面 | 说明 |
 |------|------|------|
 | `/` | HomePage | 首页 |
-| `/tools` | ToolsPage | 全部工具列表 |
-| `/tools/:id` | ToolDetailPage | 工具详情页 |
+| `/tools/:id` | ToolDetailPage | 工具详情页（导航不显示工具列表入口，从首页卡片跳转） |
 | `/requests` | RequestsPage | 用户需求列表 |
 | `/logs` | LogsPage | 实验日志 |
 | `/admin` | AdminPage | 后台管理（需登录） |
+
+> 注意：`/tools`（工具列表页）已从导航栏移除，但路由仍保留。工具入口从首页卡片进入详情页。
 
 ---
 
@@ -79,11 +80,28 @@ ai-insurance-lab/
 
 | 表名 | 说明 |
 |------|------|
-| `tools` | 工具信息（名称、状态、链接、试用次数、投票数等） |
-| `logs` | 实验日志（日记录 / 周复盘两种类型） |
-| `requests` | 用户需求提交 |
+| `tools` | 工具信息（number/name/description/status/url/notes/features/how_to_use/try_count/vote_count） |
+| `logs` | 实验日志（tool_id 可关联工具，type: daily/weekly） |
+| `requests` | 用户需求提交（nickname 存 `role::name` 格式） |
+| `suggestions` | 工具建议（关联 tool_id，用户对具体工具提交的建议） |
 | `subscriptions` | 订阅用户（邮箱或微信号） |
-| `site_config` | 首页配置（Hero 标题、实验起始日期） |
+| `site_config` | 首页配置（hero_title/hero_subtitle/experiment_start_date） |
+
+### suggestions 表建表 SQL（需手动在 Supabase 执行）
+
+```sql
+CREATE TABLE suggestions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  tool_id uuid REFERENCES tools(id) ON DELETE CASCADE,
+  content text NOT NULL,
+  nickname text,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE suggestions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read" ON suggestions FOR SELECT USING (true);
+CREATE POLICY "Public insert" ON suggestions FOR INSERT WITH CHECK (true);
+CREATE POLICY "Auth delete" ON suggestions FOR DELETE USING (auth.role() = 'authenticated');
+```
 
 ### Supabase RPC 函数
 
@@ -95,7 +113,7 @@ ai-insurance-lab/
 
 ### Mock 数据降级
 
-`src/lib/api.ts` 中所有函数均有降级逻辑：若 `.env.local` 未配置 Supabase 环境变量，自动使用 `mockData.ts` 中的本地数据，不报错。
+`src/lib/api.ts`：Supabase 未配置时自动降级到 `mockData.ts`；**已配置时不降级**，错误打印到 console。
 
 ### 环境变量
 
@@ -108,11 +126,45 @@ VITE_SUPABASE_ANON_KEY=你的 anon key
 
 ## 工具状态说明
 
-| 状态值 | 含义 | 展示位置 |
-|--------|------|----------|
-| `completed` | 已上线 | 首页"已上线工具"区、工具页 |
-| `developing` | 开发中 | 首页"正在开发"区、工具页 |
-| `upcoming` | 即将开发 | 首页"即将开发"区（有投票按钮）、工具页 |
+| 状态值 | 含义 | 卡片边框 | 卡片徽标 |
+|--------|------|----------|----------|
+| `completed` | 已上线 | teal-200 | teal |
+| `developing` | 开发中 | amber-200 | amber |
+| `upcoming` | 即将开发 | indigo-100 | indigo |
+
+- 编号为 `0` 的工具：挑战开始前上线，不计入 10 个统计
+- 卡片编号放大突出，颜色跟随状态
+
+---
+
+## 首页进度统计说明
+
+| 统计项 | 数据来源 |
+|--------|---------|
+| 完成工具 | `tools` 表中 `status=completed` 且 `number != 0` 的数量 |
+| 实验天数 | 从 `site_config.experiment_start_date` 计算，本地时区对比 |
+| 用户建议 | `suggestions` 表总条数 |
+| 用户需求 | `requests` 表总条数 |
+
+---
+
+## 需求提交字段说明
+
+提交需求时：
+- **身份（role）** + **称呼（name）** 合并存储为 `nickname` 字段
+- 格式：`保险代理人::张三`（有角色有名字）/ `保险代理人`（只选角色）/ `张三`（只填名字）
+- `RequestCard` 和 `AdminRequests` 用 `parseNickname()` 拆解显示
+
+---
+
+## 后台管理功能
+
+| 标签页 | 功能 |
+|--------|------|
+| 工具管理 | 增删改工具（含 notes/features/how_to_use）；编辑模式下可管理该工具的开发日志（增删改） |
+| 日志管理 | 全局日志增删改 |
+| 需求管理 | 查看所有需求（含角色/称呼/联系方式）；设为精选/取消；删除 |
+| 订阅列表 | 查看订阅用户 |
 
 ---
 
@@ -123,7 +175,7 @@ VITE_SUPABASE_ANON_KEY=你的 anon key
 cd E:\ins-lab\ai-insurance-lab
 
 # 安装依赖
-npm install
+npm install --legacy-peer-deps
 
 # 本地开发
 npm run dev
@@ -139,30 +191,18 @@ npm run preview
 
 ## 部署流程
 
-### 当前部署方式（手动）
+**当前部署方式（自动）**：push 到 GitHub main 分支 → GitHub Actions 自动 build + SCP 上传到阿里云服务器。
 
-1. 本地执行 `npm run build`，生成 `dist/` 文件夹
-2. 将 `dist/` 目录内的**全部文件**上传到服务器目录：
-   ```
-   /www/wwwroot/lab.tanpeak.com/
-   ├── index.html
-   ├── favicon.svg
-   ├── icons.svg
-   ├── wechat-qrcode.jpg
-   └── assets/
-       ├── index-[hash].js
-       └── index-[hash].css
-   ```
-3. 宝塔面板确认 Nginx 配置正常
+```
+git add [files] → git commit → git push → 自动部署（约 40s）
+```
 
 ### 指令约定
 
 | 用户指令 | 实际操作 |
 |---------|---------|
-| 提交备份 | git add + git commit（本地备份存档） |
-| 上线 | push 到 GitHub（未来对接自动部署流水线） |
-
-> 注意：目前尚未配置 GitHub Actions 自动部署，上线流程为手动上传 dist 文件到服务器。
+| 提交备份 | git add + git commit（本地存档） |
+| 上线 | git push（触发 GitHub Actions 自动部署） |
 
 ---
 
@@ -176,21 +216,14 @@ npm run preview
 | Web 服务器 | Nginx（宝塔管理） |
 | 网站根目录 | `/www/wwwroot/lab.tanpeak.com/` |
 | 域名 | lab.tanpeak.com（已备案） |
-| HTTPS | 待配置（Let's Encrypt，通过宝塔申请） |
-
----
-
-## 待办事项
-
-- [ ] 宝塔面板配置 HTTPS（Let's Encrypt 证书）
-- [ ] 阿里云安全组开放 443 端口
-- [ ] 配置 GitHub Actions 实现 push 自动部署
-- [ ] Supabase 数据库表结构初始化（当前生产环境数据依赖 mock）
+| HTTPS | Let's Encrypt，强制跳转，到期 2026-06-11 |
 
 ---
 
 ## 注意事项
 
-- React Router 使用 `BrowserRouter`，Nginx 需配置 `try_files $uri /index.html`，否则刷新子页面会 404
+- React Router 使用 `BrowserRouter`，Nginx 已配置 `try_files $uri /index.html`
 - `wechat-qrcode.jpg` 放在 `public/` 目录，打包后在根路径访问
-- 后台管理 `/admin` 使用 Supabase Auth 登录，未配置 Supabase 时会显示"Supabase 未配置"提示
+- 后台管理 `/admin` 使用 Supabase Auth 邮箱密码登录
+- `suggestions` 表需手动在 Supabase SQL Editor 建表（见上方 SQL）
+- 实验起始日期：`2026-03-14`（第1天），天数从本地零点切换，不受时区影响

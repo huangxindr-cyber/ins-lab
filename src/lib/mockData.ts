@@ -21,6 +21,7 @@ export const mockTools: Tool[] = [
     vote_count: 0,
     features: '根据个人情况智能推荐\n对比多款产品差异\n生成推荐理由报告',
     how_to_use: '1. 填写基本信息\n2. 选择预算范围\n3. 查看推荐结果',
+    notes: '已上线，新增百万医疗险对比功能',
     created_at: '2026-01-01T00:00:00Z',
   },
   {
@@ -36,6 +37,7 @@ export const mockTools: Tool[] = [
     vote_count: 0,
     features: '支持粘贴任意保险条款\n生成通俗易懂的解释\n标注重要风险点',
     how_to_use: '1. 粘贴条款文字\n2. 点击解释\n3. 查看通俗版本',
+    notes: '优化了免责条款的解读准确率',
     created_at: '2026-01-08T00:00:00Z',
   },
   {
@@ -51,6 +53,7 @@ export const mockTools: Tool[] = [
     vote_count: 0,
     features: null,
     how_to_use: null,
+    notes: '正在完成车险/医疗险/重疾险三类场景的智能匹配',
     created_at: '2026-01-16T00:00:00Z',
   },
   {
@@ -66,6 +69,7 @@ export const mockTools: Tool[] = [
     vote_count: 32,
     features: null,
     how_to_use: null,
+    notes: null,
     created_at: '2026-01-01T00:00:00Z',
   },
   {
@@ -81,6 +85,7 @@ export const mockTools: Tool[] = [
     vote_count: 28,
     features: null,
     how_to_use: null,
+    notes: null,
     created_at: '2026-01-01T00:00:00Z',
   },
   {
@@ -96,6 +101,7 @@ export const mockTools: Tool[] = [
     vote_count: 19,
     features: null,
     how_to_use: null,
+    notes: null,
     created_at: '2026-01-01T00:00:00Z',
   },
 ]

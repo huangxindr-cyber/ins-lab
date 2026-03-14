@@ -4,21 +4,23 @@ import { ArrowRight, Bell, CheckCircle, Loader2 } from 'lucide-react'
 import ToolCard from '../components/ToolCard'
 import RequestCard from '../components/RequestCard'
 import type { Tool, Log, Request, SiteConfig } from '../types'
-import { getTools, getLogs, getFeaturedRequests, getSiteConfig, submitRequest, subscribe, calcExperimentDays } from '../lib/api'
+import { getTools, getLogs, getRequests, getSiteConfig, submitRequest, subscribe, calcExperimentDays, getTotalSuggestionsCount } from '../lib/api'
 
 export default function HomePage() {
   const [tools, setTools] = useState<Tool[]>([])
   const [logs, setLogs] = useState<Log[]>([])
   const [requests, setRequests] = useState<Request[]>([])
   const [config, setConfig] = useState<SiteConfig | null>(null)
+  const [suggestionCount, setSuggestionCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([getTools(), getLogs(5), getFeaturedRequests(5), getSiteConfig()]).then(([t, l, r, c]) => {
+    Promise.all([getTools(), getLogs(5), getRequests(), getSiteConfig(), getTotalSuggestionsCount()]).then(([t, l, r, c, sc]) => {
       setTools(t)
       setLogs(l)
       setRequests(r)
       setConfig(c)
+      setSuggestionCount(sc)
       setLoading(false)
     })
   }, [])
@@ -35,17 +37,34 @@ export default function HomePage() {
   const completedTools = tools.filter(t => t.status === 'completed')
   const upcomingTools = tools.filter(t => t.status === 'upcoming')
   const days = config ? calcExperimentDays(config.experiment_start_date) : 1
+  const completedCountForStats = completedTools.filter(t => t.number !== 0).length
 
   return (
     <div className="pt-14">
       <WechatQRWidget />
       <HeroSection config={config} />
-      <ProgressSection days={days} completedCount={completedTools.length} requestCount={requests.length} />
-      {developingTools.length > 0 && <ToolsSection title="正在开发" tools={developingTools} />}
-      {completedTools.length > 0 && <ToolsSection title="已上线工具" tools={completedTools.slice(0, 4)} showMore={completedTools.length > 4} />}
-      {upcomingTools.length > 0 && <ToolsSection title="即将开发" tools={upcomingTools} subtitle="投票让该项目提前开发" />}
-      <RequestFormSection />
-      {requests.length > 0 && <FeaturedRequestsSection requests={requests} />}
+      <ProgressSection days={days} completedCount={completedCountForStats} requestCount={requests.length} suggestionCount={suggestionCount} />
+
+      {/* 主内容：左列工具 / 右列需求 */}
+      <section className="px-4 py-8 bg-white">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+
+          {/* 左列：工具列表 */}
+          <div className="lg:col-span-3 border border-gray-200 rounded-2xl p-5 space-y-8">
+            {developingTools.length > 0 && <ToolGroup title="正在开发" tools={developingTools} />}
+            {completedTools.length > 0 && <ToolGroup title="已上线工具" tools={completedTools.slice(0, 4)} showMore={completedTools.length > 4} />}
+            {upcomingTools.length > 0 && <ToolGroup title="即将开发" tools={upcomingTools} subtitle="投票让该项目提前开发" />}
+          </div>
+
+          {/* 右列：需求表单 + 精选需求 */}
+          <div className="lg:col-span-2 border border-gray-200 rounded-2xl p-5 space-y-6 lg:sticky lg:top-20">
+            <RequestFormSection />
+            {requests.some(r => r.is_featured) && <FeaturedRequestsSection requests={requests.filter(r => r.is_featured)} />}
+          </div>
+
+        </div>
+      </section>
+
       {logs.length > 0 && <LogsSection logs={logs} />}
       <SubscribeSection />
     </div>
@@ -75,97 +94,87 @@ function WechatQRWidget() {
 
 function HeroSection({ config }: { config: SiteConfig | null }) {
   return (
-    <section className="bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-20 px-4 text-center">
+    <section className="bg-gradient-to-b from-teal-50/60 to-white pt-16 pb-4 px-4 text-center">
       <div className="max-w-3xl mx-auto">
-        <div className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 text-sm font-medium px-4 py-1.5 rounded-full mb-6">
-          <CheckCircle size={14} />
+        <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 text-xs font-medium px-3 py-1 rounded-full mb-5">
+          <CheckCircle size={12} />
           100天公开实验进行中
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
+        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3 leading-tight">
           {config?.hero_title || 'AI保险实验室'}
         </h1>
-        <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-          {config?.hero_subtitle || '100天，用AI做10个真实可用的保险小工具。从想法 → 开发 → 上线，全过程公开。'}
+        <p className="text-base text-gray-500 mb-8 whitespace-nowrap">
+          {config?.hero_subtitle || '100天，用AI做10个真实可用的保险小工具。从想法到开发到上线，全程公开记录。'}
         </p>
-        <div className="flex items-center justify-center gap-3 flex-wrap">
-          <Link to="/tools" className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2">
-            查看所有工具 <ArrowRight size={16} />
-          </Link>
-          <Link to="/requests" className="px-6 py-3 bg-white text-gray-700 font-medium rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
-            提交需求
-          </Link>
-        </div>
       </div>
     </section>
   )
 }
 
-function ProgressSection({ days, completedCount, requestCount }: { days: number; completedCount: number; requestCount: number }) {
+function ProgressSection({ days, completedCount, requestCount, suggestionCount }: { days: number; completedCount: number; requestCount: number; suggestionCount: number }) {
   const stats = [
     { label: '完成工具', value: `${completedCount}/10` },
-    { label: '实验进度', value: `${days}/100天` },
-    { label: '用户建议', value: `${requestCount}条` },
+    { label: '实验天数', value: `${days}/100` },
+    { label: '用户建议', value: `${suggestionCount}` },
+    { label: '用户需求', value: `${requestCount}` },
   ]
 
   return (
-    <section className="py-12 px-4 bg-white">
+    <section className="pt-3 pb-8 px-4 bg-white">
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-3 gap-4 md:gap-6 mb-8">
+        <div className="grid grid-cols-4 gap-3 md:gap-4 mb-4">
           {stats.map(s => (
-            <div key={s.label} className="bg-indigo-50 rounded-2xl p-5 text-center">
-              <div className="text-2xl md:text-3xl font-bold text-indigo-600 mb-1">{s.value}</div>
-              <div className="text-sm text-gray-500">{s.label}</div>
+            <div key={s.label} className="bg-teal-50 rounded-xl p-4 text-center">
+              <div className="text-2xl md:text-3xl font-bold text-teal-600 leading-none">{s.value}</div>
+              <div className="text-xs text-gray-400 mt-1">{s.label}</div>
             </div>
           ))}
         </div>
-        <div className="bg-gray-50 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 rounded-full bg-indigo-400"></div>
-            <span className="text-sm font-medium text-gray-700">实验进度</span>
+        <div className="bg-gray-50 rounded-xl px-4 py-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-gray-400">实验进度</span>
+            <span className="text-xs text-gray-400">{days}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
+          <div className="w-full bg-gray-200 rounded-full h-1.5">
             <div
-              className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2.5 rounded-full transition-all"
+              className="bg-gradient-to-r from-teal-400 to-cyan-400 h-1.5 rounded-full transition-all"
               style={{ width: `${days}%` }}
             ></div>
           </div>
-          <div className="text-right text-xs text-gray-400 mt-1">{days}%</div>
         </div>
       </div>
     </section>
   )
 }
 
-function ToolsSection({ title, tools, subtitle, showMore }: { title: string; tools: Tool[]; subtitle?: string; showMore?: boolean }) {
+function ToolGroup({ title, tools, subtitle, showMore }: { title: string; tools: Tool[]; subtitle?: string; showMore?: boolean }) {
   const [localTools, setLocalTools] = useState(tools)
   const handleVote = (id: string) => {
     setLocalTools(prev => prev.map(t => t.id === id ? { ...t, vote_count: t.vote_count + 1 } : t))
   }
 
   return (
-    <section className="py-10 px-4 bg-white border-t border-gray-50">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-baseline gap-3 mb-2">
-          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-          {subtitle && <span className="text-sm text-gray-400">{subtitle}</span>}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-          {localTools.map(tool => <ToolCard key={tool.id} tool={tool} onVote={handleVote} />)}
-        </div>
-        {showMore && (
-          <div className="text-center mt-6">
-            <Link to="/tools" className="text-indigo-600 text-sm hover:underline flex items-center gap-1 justify-center">
-              查看全部工具 <ArrowRight size={14} />
-            </Link>
-          </div>
-        )}
+    <div>
+      <div className="flex items-baseline gap-3 mb-3">
+        <h2 className="text-base font-bold text-gray-900">{title}</h2>
+        {subtitle && <span className="text-xs text-gray-400">{subtitle}</span>}
       </div>
-    </section>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {localTools.map(tool => <ToolCard key={tool.id} tool={tool} onVote={handleVote} />)}
+      </div>
+      {showMore && (
+        <div className="mt-4">
+          <Link to="/tools" className="text-teal-600 text-sm hover:underline flex items-center gap-1">
+            查看全部工具 <ArrowRight size={14} />
+          </Link>
+        </div>
+      )}
+    </div>
   )
 }
 
 function RequestFormSection() {
-  const [form, setForm] = useState({ problem: '', current_solution: '', willing_to_try: '', nickname: '', contact: '' })
+  const [form, setForm] = useState({ problem: '', current_solution: '', willing_to_try: '', role: '', name: '', contact: '' })
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -173,101 +182,107 @@ function RequestFormSection() {
     e.preventDefault()
     if (!form.problem.trim()) return
     setStatus('loading')
+    const nickname = form.role && form.name ? `${form.role}::${form.name}`
+      : form.role || form.name || undefined
     const res = await submitRequest({
       problem: form.problem,
       current_solution: form.current_solution || undefined,
       willing_to_try: form.willing_to_try || undefined,
-      nickname: form.nickname || undefined,
+      nickname,
       contact: form.contact || undefined,
     })
     if (res.success) {
       setStatus('success')
-      setForm({ problem: '', current_solution: '', willing_to_try: '', nickname: '', contact: '' })
+      setForm({ problem: '', current_solution: '', willing_to_try: '', role: '', name: '', contact: '' })
     } else {
       setStatus('error')
       setErrorMsg(res.error || '提交失败，请稍后重试')
     }
   }
 
-  return (
-    <section className="py-14 px-4 bg-gradient-to-b from-white to-indigo-50">
-      <div className="max-w-2xl mx-auto">
-        <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">你希望AI帮你做什么工具？</h2>
-        <p className="text-center text-gray-500 text-sm mb-8">如果您的需求被采纳，未来可终身免费使用该工具</p>
+  const inputCls = "w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder:text-gray-300 placeholder:text-xs focus:outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-300"
 
-        {status === 'success' ? (
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
-            <CheckCircle size={40} className="text-green-500 mx-auto mb-3" />
-            <h3 className="font-semibold text-gray-900 mb-1">提交成功！</h3>
-            <p className="text-gray-500 text-sm">感谢你的需求，我会认真考虑的。</p>
-            <button onClick={() => setStatus('idle')} className="mt-4 text-indigo-600 text-sm hover:underline">再提交一条</button>
+  return (
+    <div>
+      {/* 标题区 */}
+      <h2 className="text-lg font-bold text-gray-900 leading-snug">一起做出真正有用的<br />AI保险工具</h2>
+      <p className="text-xs text-gray-400 mt-2 mb-6 leading-5">
+        写得越具体，我们越可能把这个工具做出来。<br />需求被采纳后，你可以永久免费使用。
+      </p>
+
+      {status === 'success' ? (
+        <div className="bg-teal-50 border border-teal-100 rounded-2xl p-8 text-center">
+          <CheckCircle size={36} className="text-teal-500 mx-auto mb-3" />
+          <h3 className="font-semibold text-gray-900 mb-1">提交成功！</h3>
+          <p className="text-gray-500 text-sm">感谢你的需求，我会认真考虑的。</p>
+          <button onClick={() => setStatus('idle')} className="mt-4 text-teal-600 text-sm hover:underline">再提交一条</button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-5">
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-gray-800">
+              你在保险工作中遇到过哪些重复、麻烦或低效率的问题？
+              <span className="text-red-400 ml-1">*</span>
+            </label>
+            <textarea value={form.problem} onChange={e => setForm(p => ({ ...p, problem: e.target.value }))}
+              required rows={3}
+              placeholder="比如：医疗险方案制作很花时间、健康告知不好判断、客户资料整理很麻烦、核保结论不好判断"
+              className={`${inputCls} resize-none`} />
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">你想解决什么问题？<span className="text-red-500">*</span></label>
-              <textarea
-                value={form.problem}
-                onChange={e => setForm(p => ({ ...p, problem: e.target.value }))}
-                required
-                rows={3}
-                placeholder="描述你在保险方面遇到的问题或痛点..."
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">现在是怎么解决的？<span className="text-gray-400 font-normal">（选填）</span></label>
-              <textarea
-                value={form.current_solution}
-                onChange={e => setForm(p => ({ ...p, current_solution: e.target.value }))}
-                rows={2}
-                placeholder="目前的解决方式，或者就是没有好方法..."
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">如果有工具你愿意试用吗？<span className="text-gray-400 font-normal">（选填）</span></label>
-              <textarea
-                value={form.willing_to_try}
-                onChange={e => setForm(p => ({ ...p, willing_to_try: e.target.value }))}
-                rows={2}
-                placeholder="说说你的使用意愿..."
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">您的称呼<span className="text-gray-400 font-normal">（选填）</span></label>
-                <input
-                  value={form.nickname}
-                  onChange={e => setForm(p => ({ ...p, nickname: e.target.value }))}
-                  placeholder="昵称"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">联系方式<span className="text-gray-400 font-normal">（选填）</span></label>
-                <input
-                  value={form.contact}
-                  onChange={e => setForm(p => ({ ...p, contact: e.target.value }))}
-                  placeholder="邮箱或微信号"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
-                />
-              </div>
-            </div>
-            {status === 'error' && <p className="text-red-500 text-sm">{errorMsg}</p>}
-            <button
-              type="submit"
-              disabled={status === 'loading' || !form.problem.trim()}
-              className="w-full py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {status === 'loading' && <Loader2 size={16} className="animate-spin" />}
-              提交需求
-            </button>
-          </form>
-        )}
-      </div>
-    </section>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-gray-800">你现在通常是怎么解决这个问题的？</label>
+            <textarea value={form.current_solution} onChange={e => setForm(p => ({ ...p, current_solution: e.target.value }))}
+              rows={2}
+              placeholder="比如：手工查资料、问同业、用 Excel 整理、靠经验判断、没有什么好办法"
+              className={`${inputCls} resize-none`} />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-gray-800">如果有一个AI工具，你希望它能帮你做到什么？</label>
+            <textarea value={form.willing_to_try} onChange={e => setForm(p => ({ ...p, willing_to_try: e.target.value }))}
+              rows={2}
+              placeholder="比如：输入客户资料自动生成医疗险方案、自动判断是否能投、一键生成客户方案"
+              className={`${inputCls} resize-none`} />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-gray-800">你是</label>
+            <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} className={inputCls}>
+              <option value="">请选择你的身份（选填）</option>
+              <option value="保险代理人">保险代理人</option>
+              <option value="保险经纪人">保险经纪人</option>
+              <option value="同业团队负责人">同业团队负责人</option>
+              <option value="客户">客户</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-gray-800">称呼 / 昵称</label>
+            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+              placeholder="如何称呼你？（选填）" className={inputCls} />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-gray-800">留下联系方式</label>
+            <p className="text-xs text-gray-400">如果工具做出来，我会第一时间通知你</p>
+            <input value={form.contact} onChange={e => setForm(p => ({ ...p, contact: e.target.value }))}
+              placeholder="微信 / 邮箱 / 电话（选填）" className={inputCls} />
+          </div>
+
+          {status === 'error' && <p className="text-red-500 text-xs">{errorMsg}</p>}
+
+          <button type="submit" disabled={status === 'loading' || !form.problem.trim()}
+            className="w-full py-3 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            {status === 'loading' && <Loader2 size={14} className="animate-spin" />}
+            提交需求
+          </button>
+
+        </form>
+      )}
+    </div>
   )
 }
 
@@ -277,21 +292,20 @@ function FeaturedRequestsSection({ requests }: { requests: Request[] }) {
     setLocalRequests(prev => prev.map(r => r.id === id ? { ...r, vote_count: r.vote_count + 1 } : r))
   }
   return (
-    <section className="py-10 px-4 bg-white border-t border-gray-50">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">精选需求</h2>
-          <Link to="/requests" className="text-indigo-600 text-sm hover:underline flex items-center gap-1">
-            查看全部 <ArrowRight size={14} />
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {localRequests.map(r => <RequestCard key={r.id} request={r} onVote={handleVote} />)}
-        </div>
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-base font-bold text-gray-900">精选需求</h2>
+        <Link to="/requests" className="text-teal-600 text-xs hover:underline flex items-center gap-1">
+          查看全部 <ArrowRight size={12} />
+        </Link>
       </div>
-    </section>
+      <div className="space-y-3">
+        {localRequests.map(r => <RequestCard key={r.id} request={r} onVote={handleVote} />)}
+      </div>
+    </div>
   )
 }
+
 
 function LogsSection({ logs }: { logs: Log[] }) {
   return (
@@ -299,7 +313,7 @@ function LogsSection({ logs }: { logs: Log[] }) {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">实验日志</h2>
-          <Link to="/logs" className="text-indigo-600 text-sm hover:underline flex items-center gap-1">
+          <Link to="/logs" className="text-teal-600 text-sm hover:underline flex items-center gap-1">
             查看全部 <ArrowRight size={14} />
           </Link>
         </div>
@@ -339,7 +353,7 @@ function SubscribeSection() {
   }
 
   return (
-    <section className="py-16 px-4 bg-gradient-to-br from-indigo-600 to-purple-600 text-white text-center">
+    <section className="py-16 px-4 bg-gradient-to-br from-teal-600 to-cyan-600 text-white text-center">
       <div className="max-w-lg mx-auto">
         <Bell size={32} className="mx-auto mb-4 opacity-90" />
         <h2 className="text-2xl font-bold mb-2">订阅实验进展</h2>
