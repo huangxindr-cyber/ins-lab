@@ -372,10 +372,12 @@ function ToolLogManager({ toolId, toolName }: { toolId: string; toolName: string
     e.preventDefault()
     if (!editingLogId) return
     setSaving(true)
-    const { data } = await supabase.from('logs').update(editForm).eq('id', editingLogId).select().single()
-    if (data) {
-      setLogs(prev => prev.map(l => l.id === editingLogId ? data : l))
+    const { error } = await supabase.from('logs').update(editForm).eq('id', editingLogId)
+    if (!error) {
+      setLogs(prev => prev.map(l => l.id === editingLogId ? { ...l, ...editForm } as Log : l))
       setEditingLogId(null)
+    } else {
+      alert(`保存失败：${error.message}`)
     }
     setSaving(false)
   }
@@ -506,10 +508,12 @@ function AdminLogs() {
     e.preventDefault()
     if (!editingLogId) return
     setSaving(true)
-    const { data } = await supabase.from('logs').update(editForm).eq('id', editingLogId).select().single()
-    if (data) {
-      setLogs(prev => prev.map(l => l.id === editingLogId ? data : l))
+    const { error } = await supabase.from('logs').update(editForm).eq('id', editingLogId)
+    if (!error) {
+      setLogs(prev => prev.map(l => l.id === editingLogId ? { ...l, ...editForm } as Log : l))
       setEditingLogId(null)
+    } else {
+      alert(`保存失败：${error.message}`)
     }
     setSaving(false)
   }
