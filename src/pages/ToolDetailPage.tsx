@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, ExternalLink, Loader2, CheckCircle, MessageSquare } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Loader2, CheckCircle, MessageSquare, Users } from 'lucide-react'
 import type { Tool, Log, Suggestion } from '../types'
 import { getToolById, getLogsByToolId, incrementTryCount, getSuggestions, submitSuggestion } from '../lib/api'
 
@@ -148,6 +148,9 @@ export default function ToolDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* 已上线工具底部：入群卡片 */}
+            {tool.status === 'completed' && <JoinGroupCard />}
           </div>
 
           {/* 右栏：建议表单 + 建议列表 */}
@@ -237,6 +240,37 @@ function SuggestionForm({ toolId, onSubmitted }: { toolId: string; onSubmitted: 
             提交建议
           </button>
         </form>
+      )}
+    </div>
+  )
+}
+
+function JoinGroupCard() {
+  const [showQR, setShowQR] = useState(false)
+  return (
+    <div className="bg-gradient-to-r from-teal-500 to-teal-600 rounded-2xl p-5 text-white">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Users size={16} className="opacity-80" />
+            <span className="font-semibold">用了有问题？来群里聊</span>
+          </div>
+          <p className="text-teal-100 text-sm">和作者及其他用户直接交流，反馈 bug、分享经验</p>
+        </div>
+        <button
+          onClick={() => setShowQR(!showQR)}
+          className="shrink-0 ml-4 px-4 py-2 bg-white text-teal-600 text-sm font-semibold rounded-xl hover:bg-teal-50 transition-colors"
+        >
+          {showQR ? '收起' : '加入'}
+        </button>
+      </div>
+      {showQR && (
+        <div className="mt-4 flex flex-col sm:flex-row items-center gap-4 pt-4 border-t border-teal-400/40">
+          <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-32 h-32 rounded-xl object-cover border-2 border-white/30 shrink-0" />
+          <p className="text-teal-100 text-sm leading-relaxed text-center sm:text-left">
+            微信扫码 / 长按识别二维码<br />加入 AI 保险实验讨论群<br />第一时间获取新工具通知
+          </p>
+        </div>
       )}
     </div>
   )

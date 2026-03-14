@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Bell, CheckCircle, Loader2, X, Users } from 'lucide-react'
+import { ArrowRight, Bell, CheckCircle, Loader2, Users, X } from 'lucide-react'
 import ToolCard from '../components/ToolCard'
 import type { Tool, Log, SiteConfig } from '../types'
 import { getTools, getLogs, getRequests, getSiteConfig, subscribe, calcExperimentDays, getTotalSuggestionsCount } from '../lib/api'
@@ -239,6 +239,7 @@ function SubscribeSection() {
   const [expanded, setExpanded] = useState(false)
   const [contact, setContact] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [showGroupQR, setShowGroupQR] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -253,7 +254,7 @@ function SubscribeSection() {
       <div className="max-w-lg mx-auto">
         <Bell size={32} className="mx-auto mb-4 opacity-90" />
         <h2 className="text-2xl font-bold mb-2">订阅实验进展</h2>
-        <p className="text-indigo-200 text-sm mb-6">每当有新工具上线或重要进展，第一时间通知你</p>
+        <p className="text-teal-100 text-sm mb-6">每当有新工具上线或重要进展，第一时间通知你</p>
 
         {status === 'success' ? (
           <div className="bg-white/20 rounded-2xl p-6">
@@ -266,12 +267,12 @@ function SubscribeSection() {
               value={contact}
               onChange={e => setContact(e.target.value)}
               placeholder="邮箱或微信号"
-              className="flex-1 px-4 py-2.5 rounded-xl bg-white/20 border border-white/30 text-white placeholder-indigo-300 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+              className="flex-1 px-4 py-2.5 rounded-xl bg-white/20 border border-white/30 text-white placeholder-teal-200 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
             />
             <button
               type="submit"
               disabled={status === 'loading' || !contact.trim()}
-              className="px-5 py-2.5 bg-white text-indigo-600 font-medium rounded-xl hover:bg-indigo-50 transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 bg-white text-teal-600 font-medium rounded-xl hover:bg-teal-50 transition-colors disabled:opacity-50"
             >
               {status === 'loading' ? <Loader2 size={16} className="animate-spin" /> : '订阅'}
             </button>
@@ -279,12 +280,34 @@ function SubscribeSection() {
         ) : (
           <button
             onClick={() => setExpanded(true)}
-            className="px-8 py-3 bg-white text-indigo-600 font-medium rounded-xl hover:bg-indigo-50 transition-colors"
+            className="px-8 py-3 bg-white text-teal-600 font-medium rounded-xl hover:bg-teal-50 transition-colors"
           >
             订阅实验进展
           </button>
         )}
         {status === 'error' && <p className="text-red-300 text-sm mt-2">订阅失败，请稍后重试</p>}
+
+        {/* 分隔线 + 直接入群 */}
+        <div className="flex items-center gap-3 max-w-sm mx-auto mt-6">
+          <div className="flex-1 border-t border-white/20" />
+          <span className="text-teal-200 text-xs">或者</span>
+          <div className="flex-1 border-t border-white/20" />
+        </div>
+        <button
+          onClick={() => setShowGroupQR(!showGroupQR)}
+          className="mt-4 flex items-center gap-2 mx-auto px-5 py-2.5 bg-white/15 border border-white/30 text-white text-sm font-medium rounded-xl hover:bg-white/25 transition-colors"
+        >
+          <Users size={15} />
+          直接扫码加入讨论群
+        </button>
+        {showGroupQR && (
+          <div className="mt-4 flex flex-col items-center">
+            <div className="bg-white p-3 rounded-2xl shadow-lg">
+              <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-40 h-40 object-cover rounded-xl" />
+            </div>
+            <p className="text-teal-100 text-xs mt-3">微信扫码 / 长按识别二维码</p>
+          </div>
+        )}
       </div>
     </section>
   )

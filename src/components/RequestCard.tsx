@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ThumbsUp, Star, UserRound, Crown, User, Tag, MessageCircle } from 'lucide-react'
+import { ThumbsUp, Star, UserRound, Crown, User, Tag, MessageCircle, Users } from 'lucide-react'
 import type { Request, RequestReply } from '../types'
 import { voteForRequest, unvoteForRequest } from '../lib/api'
 
@@ -148,6 +148,8 @@ export default function RequestCard({ request, onVote, replies }: RequestCardPro
               <p className="text-sm text-amber-900 leading-relaxed">{reply.content}</p>
             </div>
           ))}
+          {/* 有回复时，引导入群深入交流 */}
+          <GroupHint />
         </div>
       )}
 
@@ -166,6 +168,32 @@ export default function RequestCard({ request, onVote, replies }: RequestCardPro
           {voted ? `已支持 · ${localCount}` : `支持${localCount > 0 ? ` · ${localCount}` : ''}`}
         </button>
       </div>
+    </div>
+  )
+}
+
+function GroupHint() {
+  const [showQR, setShowQR] = useState(false)
+  return (
+    <div className="bg-teal-50 border border-teal-100 rounded-xl px-3 py-2.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <Users size={12} className="text-teal-500" />
+          <span className="text-xs text-teal-700">想深入交流？加入讨论群</span>
+        </div>
+        <button
+          onClick={() => setShowQR(!showQR)}
+          className="text-xs text-teal-600 font-semibold hover:text-teal-800"
+        >
+          {showQR ? '收起 ↑' : '扫码入群 →'}
+        </button>
+      </div>
+      {showQR && (
+        <div className="mt-3 flex items-center gap-4">
+          <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-24 h-24 object-cover rounded-xl border border-teal-200 shrink-0" />
+          <p className="text-xs text-teal-600 leading-relaxed">微信扫码 / 长按识别二维码<br />加入 AI 保险实验讨论群</p>
+        </div>
+      )}
     </div>
   )
 }
