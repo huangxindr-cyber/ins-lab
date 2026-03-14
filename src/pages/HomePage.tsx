@@ -35,7 +35,7 @@ export default function HomePage() {
   const developingTools = tools.filter(t => t.status === 'developing')
   const completedTools = tools.filter(t => t.status === 'completed')
   const upcomingTools = tools.filter(t => t.status === 'upcoming')
-  const days = config ? calcExperimentDays(config.experiment_start_date) : 1
+  const days = calcExperimentDays(config?.experiment_start_date || '2026-03-14')
   const completedCountForStats = completedTools.filter(t => t.number !== 0).length
 
   return (

@@ -169,11 +169,11 @@ export async function subscribe(contact: string): Promise<{ success: boolean; er
 
 // --- Config ---
 
-export async function getSiteConfig(): Promise<SiteConfig> {
+export async function getSiteConfig(): Promise<SiteConfig | null> {
   if (!isSupabaseConfigured()) return mockConfig
   const { data, error } = await supabase.from('site_config').select('*').single()
-  if (error) { console.error('getSiteConfig:', error.message); return mockConfig }
-  return data || mockConfig
+  if (error) { console.error('getSiteConfig:', error.message); return null }
+  return data || null
 }
 
 export function calcExperimentDays(startDate: string): number {
