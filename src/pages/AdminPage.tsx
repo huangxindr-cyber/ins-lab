@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { LogOut, Loader2, Plus, Trash2, Star, StarOff, CheckCircle, Pencil, X, BookOpen, MessageCircle } from 'lucide-react'
+import { LogOut, Loader2, Plus, Trash2, Star, StarOff, CheckCircle, Pencil, X, BookOpen, MessageCircle, Eye, EyeOff } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import type { Tool, Log, Request, RequestReply, Subscription } from '../types'
+import type { Tool, Log, Request, RequestReply, Subscription, Suggestion } from '../types'
 import { submitReply, updateReply, deleteReply, getAllReplies } from '../lib/api'
 
-type Tab = 'tools' | 'logs' | 'requests' | 'subscriptions'
+type Tab = 'tools' | 'logs' | 'requests' | 'suggestions' | 'subscriptions'
 
 export default function AdminPage() {
   const [session, setSession] = useState<boolean>(false)
@@ -102,6 +102,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     { key: 'tools', label: '工具管理' },
     { key: 'logs', label: '日志管理' },
     { key: 'requests', label: '需求管理' },
+    { key: 'suggestions', label: '建议管理' },
     { key: 'subscriptions', label: '订阅列表' },
   ]
 
@@ -129,6 +130,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         {tab === 'tools' && <AdminTools />}
         {tab === 'logs' && <AdminLogs />}
         {tab === 'requests' && <AdminRequests />}
+        {tab === 'suggestions' && <AdminSuggestions />}
         {tab === 'subscriptions' && <AdminSubscriptions />}
       </div>
     </div>
@@ -664,12 +666,14 @@ function AdminRequests() {
   }
 
   const toggleFeatured = async (id: string, current: boolean) => {
-    await supabase.from('requests').update({ is_featured: !current }).eq('id', id)
+    const { error } = await supabase.from('requests').update({ is_featured: !current }).eq('id', id)
+    if (error) { alert(`操作失败：${error.message}`); return }
     setRequests(prev => prev.map(r => r.id === id ? { ...r, is_featured: !current } : r))
   }
 
   const handleStatusChange = async (id: string, status: string) => {
-    await supabase.from('requests').update({ status }).eq('id', id)
+    const { error } = await supabase.from('requests').update({ status }).eq('id', id)
+    if (error) { alert(`操作失败：${error.message}`); return }
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: status as Request['status'] } : r))
   }
 
@@ -712,10 +716,10 @@ function AdminRequests() {
                 </select>
                 <button
                   onClick={() => toggleFeatured(req.id, req.is_featured)}
-                  className={`p-1.5 rounded-lg transition-colors ${req.is_featured ? 'text-amber-500 bg-amber-50 hover:bg-amber-100' : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500'}`}
-                  title={req.is_featured ? '取消精选' : '设为精选'}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${req.is_featured ? 'text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200' : 'text-gray-500 bg-gray-50 hover:bg-gray-100 border border-gray-200'}`}
                 >
-                  {req.is_featured ? <Star size={14} fill="currentColor" /> : <StarOff size={14} />}
+                  {req.is_featured ? <Star size={13} fill="currentColor" /> : <StarOff size={13} />}
+                  {req.is_featured ? '取消精选' : '设为精选'}
                 </button>
                 <button onClick={() => handleDelete(req.id)} className="text-gray-300 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors">
                   <Trash2 size={14} />
@@ -854,6 +858,94 @@ function ReplyManager({ requestId, replies, onAdd, onUpdate, onDelete }: {
             <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg">取消</button>
           </div>
         </form>
+      )}
+    </div>
+  )
+}
+
+function AdminSuggestions() {
+  const [suggestions, setSuggestions] = useState<(Suggestion & { tool_name?: string })[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from('suggestions').select('*').order('is_featured', { ascending: false }).order('created_at', { ascending: false }),
+      supabase.from('tools').select('id, name'),
+    ]).then(([{ data: subs }, { data: tools }]) => {
+      const toolMap = Object.fromEntries((tools || []).map((t: { id: string; name: string }) => [t.id, t.name]))
+      setSuggestions((subs || []).map((s: Suggestion) => ({ ...s, tool_name: toolMap[s.tool_id] || '未知工具' })))
+      setLoading(false)
+    })
+  }, [])
+
+  const toggleFeatured = async (id: string, current: boolean) => {
+    const { error } = await supabase.from('suggestions').update({ is_featured: !current }).eq('id', id)
+    if (error) { alert(`操作失败：${error.message}`); return }
+    setSuggestions(prev => prev.map(s => s.id === id ? { ...s, is_featured: !current } : s))
+  }
+
+  const toggleHidden = async (id: string, current: boolean) => {
+    const { error } = await supabase.from('suggestions').update({ is_hidden: !current }).eq('id', id)
+    if (error) { alert(`操作失败：${error.message}`); return }
+    setSuggestions(prev => prev.map(s => s.id === id ? { ...s, is_hidden: !current } : s))
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('确认删除此建议？')) return
+    const { error } = await supabase.from('suggestions').delete().eq('id', id)
+    if (error) { alert(`删除失败：${error.message}`); return }
+    setSuggestions(prev => prev.filter(s => s.id !== id))
+  }
+
+  if (loading) return <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-teal-500" /></div>
+
+  return (
+    <div>
+      <h2 className="font-semibold text-gray-900 mb-4">用户建议（{suggestions.length}条）</h2>
+      {suggestions.length === 0 ? (
+        <div className="text-center py-10 text-gray-400">暂无建议</div>
+      ) : (
+        <div className="space-y-2">
+          {suggestions.map(s => (
+            <div key={s.id} className={`bg-white rounded-xl border shadow-sm p-4 transition-opacity ${s.is_hidden ? 'opacity-50 border-gray-100' : s.is_featured ? 'border-amber-200' : 'border-gray-100'}`}>
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                    <span className="text-xs bg-teal-50 text-teal-600 px-2 py-0.5 rounded-full font-medium">{s.tool_name}</span>
+                    <span className="text-xs font-semibold text-gray-700">{s.nickname || '匿名'}</span>
+                    <span className="text-xs text-gray-300">{new Date(s.created_at).toLocaleDateString('zh-CN')}</span>
+                    {s.is_featured && <span className="text-xs bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full font-medium">精选</span>}
+                    {s.is_hidden && <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">已隐藏</span>}
+                  </div>
+                  <p className="text-sm text-gray-700 leading-relaxed">{s.content}</p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => toggleFeatured(s.id, s.is_featured)}
+                    className={`p-2 rounded-lg transition-colors ${s.is_featured ? 'text-amber-500 bg-amber-50 hover:bg-amber-100' : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500'}`}
+                    title={s.is_featured ? '取消精选' : '设为精选'}
+                  >
+                    {s.is_featured ? <Star size={15} fill="currentColor" /> : <StarOff size={15} />}
+                  </button>
+                  <button
+                    onClick={() => toggleHidden(s.id, s.is_hidden)}
+                    className={`p-2 rounded-lg transition-colors ${s.is_hidden ? 'text-gray-500 bg-gray-100 hover:bg-gray-200' : 'text-gray-300 hover:bg-gray-100 hover:text-gray-600'}`}
+                    title={s.is_hidden ? '取消隐藏' : '隐藏'}
+                  >
+                    {s.is_hidden ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(s.id)}
+                    className="p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    title="删除"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )

@@ -57,6 +57,8 @@ export interface Suggestion {
   content: string
   nickname: string | null
   created_at: string
+  is_featured: boolean
+  is_hidden: boolean
 }
 
 export interface Subscription {

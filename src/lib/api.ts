@@ -146,6 +146,8 @@ export async function getSuggestions(toolId: string): Promise<Suggestion[]> {
     .from('suggestions')
     .select('*')
     .eq('tool_id', toolId)
+    .eq('is_hidden', false)
+    .order('is_featured', { ascending: false })
     .order('created_at', { ascending: false })
   if (error) { console.error('getSuggestions:', error.message); return [] }
   return data || []

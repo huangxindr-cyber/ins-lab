@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, ExternalLink, Loader2, CheckCircle, MessageSquare, Users } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Loader2, CheckCircle, MessageSquare, Users, Star } from 'lucide-react'
 import type { Tool, Log, Suggestion } from '../types'
 import { getToolById, getLogsByToolId, incrementTryCount, getSuggestions, submitSuggestion } from '../lib/api'
 
@@ -185,6 +185,8 @@ function SuggestionForm({ toolId, onSubmitted }: { toolId: string; onSubmitted: 
         content: form.content,
         nickname: form.nickname || null,
         created_at: new Date().toISOString(),
+        is_featured: false,
+        is_hidden: false,
       })
       setForm({ content: '', nickname: '' })
       setTimeout(() => setStatus('idle'), 2000)
@@ -282,7 +284,13 @@ function SuggestionList({ suggestions }: { suggestions: Suggestion[] }) {
       <h2 className="text-base font-bold text-gray-900 mb-4">已提交的建议（{suggestions.length}）</h2>
       <div className="space-y-4">
         {suggestions.map(s => (
-          <div key={s.id} className="border-b border-gray-50 pb-4 last:border-0 last:pb-0">
+          <div key={s.id} className={`border-b border-gray-50 pb-4 last:border-0 last:pb-0 ${s.is_featured ? 'bg-amber-50/50 -mx-2 px-2 rounded-xl border-amber-100' : ''}`}>
+            {s.is_featured && (
+              <div className="flex items-center gap-1 mb-1.5">
+                <Star size={11} className="text-amber-400" fill="currentColor" />
+                <span className="text-xs text-amber-500 font-medium">精选建议</span>
+              </div>
+            )}
             <p className="text-sm text-gray-700 leading-relaxed">{s.content}</p>
             <div className="flex items-center gap-2 mt-2">
               <span className="text-xs text-gray-500 font-medium">{s.nickname || '匿名'}</span>
