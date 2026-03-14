@@ -84,8 +84,30 @@ ai-insurance-lab/
 | `logs` | 实验日志（tool_id 可关联工具，type: daily/weekly） |
 | `requests` | 用户需求提交（nickname 存 `role::name` 格式） |
 | `suggestions` | 工具建议（关联 tool_id，用户对具体工具提交的建议） |
+| `request_replies` | 需求回复（关联 request_id，管理员对用户需求的回复，公开展示） |
 | `subscriptions` | 订阅用户（邮箱或微信号） |
 | `site_config` | 首页配置（hero_title/hero_subtitle/experiment_start_date） |
+
+### request_replies 表建表 SQL（需手动在 Supabase 执行）
+
+```sql
+CREATE TABLE request_replies (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  request_id uuid REFERENCES requests(id) ON DELETE CASCADE,
+  content text NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+ALTER TABLE request_replies ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read replies" ON request_replies FOR SELECT USING (true);
+CREATE POLICY "Auth write replies" ON request_replies FOR ALL USING (auth.role() = 'authenticated');
+```
+
+### 订阅列表读取权限（需手动在 Supabase 执行）
+
+```sql
+CREATE POLICY "Auth read subscriptions" ON subscriptions FOR SELECT USING (auth.role() = 'authenticated');
+```
 
 ### suggestions 表建表 SQL（需手动在 Supabase 执行）
 
@@ -163,7 +185,7 @@ VITE_SUPABASE_ANON_KEY=你的 anon key
 |--------|------|
 | 工具管理 | 增删改工具（含 notes/features/how_to_use）；编辑模式下可管理该工具的开发日志（增删改） |
 | 日志管理 | 全局日志增删改 |
-| 需求管理 | 查看所有需求（含角色/称呼/联系方式）；设为精选/取消；删除 |
+| 需求管理 | 查看所有需求（含角色/称呼/联系方式）；设为精选/取消；删除；每条需求可添加/编辑/删除回复 |
 | 订阅列表 | 查看订阅用户 |
 
 ---
@@ -226,4 +248,6 @@ git add [files] → git commit → git push → 自动部署（约 40s）
 - `wechat-qrcode.jpg` 放在 `public/` 目录，打包后在根路径访问
 - 后台管理 `/admin` 使用 Supabase Auth 邮箱密码登录
 - `suggestions` 表需手动在 Supabase SQL Editor 建表（见上方 SQL）
+- `request_replies` 表需手动建表（见上方 SQL）
+- `subscriptions` 表需补充 Auth read 策略（见上方 SQL），否则后台订阅列表为空
 - 实验起始日期：`2026-03-14`（第1天），天数从本地零点切换，不受时区影响
