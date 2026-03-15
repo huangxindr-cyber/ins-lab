@@ -37,11 +37,11 @@ export default function ToolCard({ tool, onVote }: ToolCardProps) {
   const [localCount, setLocalCount] = useState(tool.vote_count)
   const [bumping, setBumping] = useState(false)
 
-  const handleEnter = async (e: React.MouseEvent) => {
+  const handleEnter = (e: React.MouseEvent) => {
     e.preventDefault()
     if (!tool.url) return
-    await incrementTryCount(tool.id)
-    window.open(tool.url, '_blank')
+    window.open(tool.url, '_blank')  // 同步调用，避免 iOS/微信拦截
+    incrementTryCount(tool.id)       // 异步统计，不阻塞跳转
   }
 
   const handleVote = async (e: React.MouseEvent) => {
@@ -98,7 +98,7 @@ export default function ToolCard({ tool, onVote }: ToolCardProps) {
         {tool.status === 'completed' ? (
           <button
             onClick={handleEnter}
-            className="w-full flex items-center justify-center gap-1.5 py-2 bg-teal-600 text-white text-sm font-medium rounded-xl hover:bg-teal-700 transition-colors"
+            className="w-full flex items-center justify-center gap-1.5 py-3 bg-teal-600 text-white text-sm font-medium rounded-xl hover:bg-teal-700 transition-colors"
           >
             <ExternalLink size={13} />
             进入
