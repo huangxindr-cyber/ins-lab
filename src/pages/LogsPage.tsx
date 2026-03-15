@@ -3,13 +3,13 @@ import { Loader2 } from 'lucide-react'
 import type { Log } from '../types'
 import { getLogs } from '../lib/api'
 
-const SECTION_LABELS: Record<string, string> = {
-  '今日完成': '今日完成',
-  '分享心得': '分享心得',
-  '明日计划': '明日计划',
+const SECTION_STYLES: Record<string, { label: string; cls: string; dot: string }> = {
+  '今日完成': { label: '今日完成', cls: 'text-teal-600 font-semibold', dot: 'bg-teal-400' },
+  '分享心得': { label: '分享心得', cls: 'text-indigo-500 font-semibold italic', dot: 'bg-indigo-400' },
+  '明日计划': { label: '明日计划', cls: 'text-amber-500 font-semibold', dot: 'bg-amber-400' },
 }
 
-function parseLogContent(content: string): { key: string; label: string | null; text: string }[] | null {
+function parseLogContent(content: string): { key: string; text: string }[] | null {
   const keys = ['今日完成', '分享心得', '明日计划', '其他']
   if (!keys.some(k => content.includes(`[${k}]`))) return null
   return keys
@@ -17,7 +17,7 @@ function parseLogContent(content: string): { key: string; label: string | null; 
       const regex = new RegExp(`\\[${k}\\]\\n?([\\s\\S]*?)(?=\\n\\[|$)`)
       const match = content.match(regex)
       const text = match ? match[1].trim() : ''
-      return { key: k, label: k === '其他' ? null : SECTION_LABELS[k] ?? k, text }
+      return { key: k, text }
     })
     .filter(s => s.text)
 }
@@ -106,19 +106,24 @@ export default function LogsPage() {
                           return <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">{log.content}</p>
                         }
                         return (
-                          <div className="space-y-2">
-                            {sections.map(s => (
-                              <div key={s.key}>
-                                {s.label ? (
-                                  <p className="text-sm leading-relaxed text-gray-600">
-                                    <span className="font-medium text-gray-700">{s.label}：</span>
-                                    {s.text}
-                                  </p>
-                                ) : (
-                                  <p className="text-sm leading-relaxed text-gray-500 whitespace-pre-line">{s.text}</p>
-                                )}
-                              </div>
-                            ))}
+                          <div className="space-y-3">
+                            {sections.map(s => {
+                              const style = SECTION_STYLES[s.key]
+                              if (!style) {
+                                return (
+                                  <p key={s.key} className="text-sm text-gray-500 leading-relaxed whitespace-pre-line">{s.text}</p>
+                                )
+                              }
+                              return (
+                                <div key={s.key}>
+                                  <div className="flex items-center gap-1.5 mb-1">
+                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`} />
+                                    <span className={`text-xs ${style.cls}`}>{style.label}</span>
+                                  </div>
+                                  <p className="text-sm text-gray-600 leading-relaxed pl-3 border-l-2 border-gray-100 whitespace-pre-line">{s.text}</p>
+                                </div>
+                              )
+                            })}
                           </div>
                         )
                       })()}
