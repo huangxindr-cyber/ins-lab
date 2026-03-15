@@ -6,7 +6,7 @@ import type { Tool, Log, Request, RequestReply, SiteConfig, Suggestion } from '.
 
 export async function getTools(): Promise<Tool[]> {
   if (!isSupabaseConfigured()) return mockTools
-  const { data, error } = await supabase.from('tools').select('*').order('number')
+  const { data, error } = await supabase.from('tools').select('*').order('sort_order').order('number')
   if (error) { console.error('getTools:', error.message); return [] }
   return data || []
 }

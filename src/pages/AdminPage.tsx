@@ -6,6 +6,26 @@ import { submitReply, updateReply, deleteReply, getAllReplies } from '../lib/api
 
 type Tab = 'tools' | 'logs' | 'requests' | 'suggestions' | 'subscriptions'
 
+// ---- 日志分节工具函数 ----
+function serializeLogSections(completed: string, insight: string, plan: string, other: string): string {
+  const parts: string[] = []
+  if (completed.trim()) parts.push(`[今日完成]\n${completed.trim()}`)
+  if (insight.trim()) parts.push(`[分享心得]\n${insight.trim()}`)
+  if (plan.trim()) parts.push(`[明日计划]\n${plan.trim()}`)
+  if (other.trim()) parts.push(`[其他]\n${other.trim()}`)
+  return parts.join('\n\n')
+}
+
+function deserializeLogContent(content: string): { completed: string; insight: string; plan: string; other: string } | null {
+  const keys = ['今日完成', '分享心得', '明日计划', '其他']
+  if (!keys.some(k => content.includes(`[${k}]`))) return null
+  const get = (name: string) => {
+    const m = content.match(new RegExp(`\\[${name}\\]\\n?([\\s\\S]*?)(?=\\n\\[|$)`))
+    return m ? m[1].trim() : ''
+  }
+  return { completed: get('今日完成'), insight: get('分享心得'), plan: get('明日计划'), other: get('其他') }
+}
+
 export default function AdminPage() {
   const [session, setSession] = useState<boolean>(false)
   const [checking, setChecking] = useState(true)
@@ -137,7 +157,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   )
 }
 
-const EMPTY_FORM = { number: '', name: '', description: '', status: 'upcoming', start_date: '', complete_date: '', url: '', notes: '', features: '', how_to_use: '' }
+const EMPTY_FORM = { number: '', name: '', description: '', status: 'upcoming', sort_order: '0', start_date: '', complete_date: '', url: '', notes: '', core_scenarios: '', features: '', how_to_use: '' }
 
 function AdminTools() {
   const [tools, setTools] = useState<Tool[]>([])
@@ -173,10 +193,12 @@ function AdminTools() {
       name: tool.name,
       description: tool.description,
       status: tool.status,
+      sort_order: String(tool.sort_order ?? 0),
       start_date: tool.start_date || '',
       complete_date: tool.complete_date || '',
       url: tool.url || '',
       notes: tool.notes || '',
+      core_scenarios: tool.core_scenarios || '',
       features: tool.features || '',
       how_to_use: tool.how_to_use || '',
     })
@@ -202,10 +224,12 @@ function AdminTools() {
       name: form.name,
       description: form.description,
       status: form.status,
+      sort_order: parseInt(form.sort_order) || 0,
       start_date: form.start_date || null,
       complete_date: form.complete_date || null,
       url: form.url || null,
       notes: form.notes || null,
+      core_scenarios: form.core_scenarios || null,
       features: form.features || null,
       how_to_use: form.how_to_use || null,
     }
@@ -246,6 +270,12 @@ function AdminTools() {
     setTools(prev => prev.map(t => t.id === id ? { ...t, status: status as Tool['status'] } : t))
   }
 
+  const handleSortOrderChange = async (id: string, sort_order: number) => {
+    const { error } = await supabase.from('tools').update({ sort_order }).eq('id', id)
+    if (error) { alert(`更新失败：${error.message}`); return }
+    setTools(prev => [...prev.map(t => t.id === id ? { ...t, sort_order } : t)].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.number - b.number))
+  }
+
   const inputCls = "w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-200"
 
   if (loading) return <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-teal-500" /></div>
@@ -267,9 +297,10 @@ function AdminTools() {
             <button type="button" onClick={closeForm} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <input required value={form.number} onChange={e => setForm(p => ({ ...p, number: e.target.value }))} placeholder="编号" type="number" className={inputCls} />
             <input required value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="工具名称" className={inputCls} />
+            <input value={form.sort_order} onChange={e => setForm(p => ({ ...p, sort_order: e.target.value }))} placeholder="显示排序（数字小靠前）" type="number" className={inputCls} title="显示排序" />
           </div>
           <textarea required value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="一句话介绍（卡片摘要）" rows={2} className={`${inputCls} resize-none`} />
           <div className="grid grid-cols-3 gap-3">
@@ -286,7 +317,8 @@ function AdminTools() {
 
           <div className="border-t border-gray-100 pt-3 space-y-3">
             <p className="text-xs text-gray-400 font-medium">以下内容显示在详情页</p>
-            <textarea value={form.features} onChange={e => setForm(p => ({ ...p, features: e.target.value }))} placeholder="核心功能（每行一条，详情页展示）" rows={3} className={`${inputCls} resize-none`} />
+            <textarea value={form.core_scenarios} onChange={e => setForm(p => ({ ...p, core_scenarios: e.target.value }))} placeholder="核心场景（每行一条，展示在功能介绍上方）" rows={3} className={`${inputCls} resize-none`} />
+            <textarea value={form.features} onChange={e => setForm(p => ({ ...p, features: e.target.value }))} placeholder="功能介绍（每行一条，详情页展示）" rows={3} className={`${inputCls} resize-none`} />
             <textarea value={form.how_to_use} onChange={e => setForm(p => ({ ...p, how_to_use: e.target.value }))} placeholder="使用方法（每行一步，详情页展示）" rows={3} className={`${inputCls} resize-none`} />
           </div>
 
@@ -314,6 +346,13 @@ function AdminTools() {
               <div className="font-medium text-gray-900 text-sm truncate">{tool.name}</div>
               <div className="text-xs text-gray-400 truncate">{tool.notes || tool.description}</div>
             </div>
+            <input
+              type="number"
+              value={tool.sort_order ?? 0}
+              onChange={e => handleSortOrderChange(tool.id, parseInt(e.target.value) || 0)}
+              className="w-14 text-xs px-2 py-1 rounded-lg border border-gray-200 focus:outline-none text-center shrink-0"
+              title="显示排序（数字小靠前）"
+            />
             <select
               value={tool.status}
               onChange={e => handleStatusChange(tool.id, e.target.value)}
@@ -340,10 +379,10 @@ function ToolLogManager({ toolId, toolName }: { toolId: string; toolName: string
   const [logs, setLogs] = useState<Log[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ date: '', title: '', content: '', type: 'daily' })
+  const [form, setForm] = useState({ date: '', title: '', completed: '', insight: '', plan: '', other: '', type: 'daily' })
   const [saving, setSaving] = useState(false)
   const [editingLogId, setEditingLogId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({ date: '', title: '', content: '', type: 'daily' })
+  const [editForm, setEditForm] = useState({ date: '', title: '', completed: '', insight: '', plan: '', other: '', type: 'daily' })
 
   useEffect(() => {
     setLoading(true)
@@ -356,27 +395,36 @@ function ToolLogManager({ toolId, toolName }: { toolId: string; toolName: string
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    const { data, error } = await supabase.from('logs').insert([{ ...form, tool_id: toolId }]).select().single()
+    const content = serializeLogSections(form.completed, form.insight, form.plan, form.other)
+    const { data, error } = await supabase.from('logs').insert([{ date: form.date, title: form.title, content, type: form.type, tool_id: toolId }]).select().single()
     if (error) {
       alert(`发布失败：${error.message}`)
     } else {
-      setLogs(prev => [data ?? { ...form, id: Date.now().toString(), tool_id: toolId, created_at: new Date().toISOString() } as Log, ...prev])
+      setLogs(prev => [data ?? { date: form.date, title: form.title, content, type: form.type, id: Date.now().toString(), tool_id: toolId, created_at: new Date().toISOString() } as Log, ...prev])
       setShowForm(false)
-      setForm({ date: '', title: '', content: '', type: 'daily' })
+      setForm({ date: '', title: '', completed: '', insight: '', plan: '', other: '', type: 'daily' })
     }
     setSaving(false)
   }
 
   const openEdit = (log: Log) => {
     setEditingLogId(log.id)
-    setEditForm({ date: log.date, title: log.title, content: log.content, type: log.type })
+    const sections = deserializeLogContent(log.content)
+    setEditForm({
+      date: log.date, title: log.title, type: log.type,
+      completed: sections?.completed ?? log.content,
+      insight: sections?.insight ?? '',
+      plan: sections?.plan ?? '',
+      other: sections?.other ?? '',
+    })
   }
 
   const handleEditSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingLogId) return
     setSaving(true)
-    const { data, error } = await supabase.from('logs').update(editForm).eq('id', editingLogId).select().single()
+    const content = serializeLogSections(editForm.completed, editForm.insight, editForm.plan, editForm.other)
+    const { data, error } = await supabase.from('logs').update({ date: editForm.date, title: editForm.title, content, type: editForm.type }).eq('id', editingLogId).select().single()
     if (error) {
       alert(`保存失败：${error.message}`)
     } else if (!data) {
@@ -421,7 +469,10 @@ function ToolLogManager({ toolId, toolName }: { toolId: string; toolName: string
             </select>
             <input required value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="标题" className={inputCls} />
           </div>
-          <textarea required value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} placeholder="日志内容" rows={3} className={`w-full ${inputCls} resize-none`} />
+          <textarea value={form.completed} onChange={e => setForm(p => ({ ...p, completed: e.target.value }))} placeholder="今日完成" rows={2} className={`w-full ${inputCls} resize-none`} />
+          <textarea value={form.insight} onChange={e => setForm(p => ({ ...p, insight: e.target.value }))} placeholder="分享心得" rows={2} className={`w-full ${inputCls} resize-none`} />
+          <textarea value={form.plan} onChange={e => setForm(p => ({ ...p, plan: e.target.value }))} placeholder="明日计划" rows={2} className={`w-full ${inputCls} resize-none`} />
+          <textarea value={form.other} onChange={e => setForm(p => ({ ...p, other: e.target.value }))} placeholder="其他（不公开显示标题）" rows={2} className={`w-full ${inputCls} resize-none`} />
           <div className="flex gap-2">
             <button type="submit" disabled={saving} className="px-3 py-1.5 bg-teal-600 text-white text-xs rounded-lg hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1">
               {saving && <Loader2 size={11} className="animate-spin" />} 发布
@@ -449,7 +500,10 @@ function ToolLogManager({ toolId, toolName }: { toolId: string; toolName: string
                     </select>
                     <input required value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} placeholder="标题" className={inputCls} />
                   </div>
-                  <textarea required value={editForm.content} onChange={e => setEditForm(p => ({ ...p, content: e.target.value }))} rows={3} className={`w-full ${inputCls} resize-none`} />
+                  <textarea value={editForm.completed} onChange={e => setEditForm(p => ({ ...p, completed: e.target.value }))} placeholder="今日完成" rows={2} className={`w-full ${inputCls} resize-none`} />
+                  <textarea value={editForm.insight} onChange={e => setEditForm(p => ({ ...p, insight: e.target.value }))} placeholder="分享心得" rows={2} className={`w-full ${inputCls} resize-none`} />
+                  <textarea value={editForm.plan} onChange={e => setEditForm(p => ({ ...p, plan: e.target.value }))} placeholder="明日计划" rows={2} className={`w-full ${inputCls} resize-none`} />
+                  <textarea value={editForm.other} onChange={e => setEditForm(p => ({ ...p, other: e.target.value }))} placeholder="其他（不公开显示标题）" rows={2} className={`w-full ${inputCls} resize-none`} />
                   <div className="flex gap-2">
                     <button type="submit" disabled={saving} className="px-3 py-1.5 bg-teal-600 text-white text-xs rounded-lg hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1">
                       {saving && <Loader2 size={11} className="animate-spin" />} 保存
@@ -485,10 +539,10 @@ function AdminLogs() {
   const [logs, setLogs] = useState<Log[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ date: '', title: '', content: '', type: 'daily' })
+  const [form, setForm] = useState({ date: '', title: '', completed: '', insight: '', plan: '', other: '', type: 'daily' })
   const [saving, setSaving] = useState(false)
   const [editingLogId, setEditingLogId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({ date: '', title: '', content: '', type: 'daily' })
+  const [editForm, setEditForm] = useState({ date: '', title: '', completed: '', insight: '', plan: '', other: '', type: 'daily' })
 
   useEffect(() => {
     supabase.from('logs').select('*').order('date', { ascending: false }).then(({ data }) => {
@@ -500,20 +554,28 @@ function AdminLogs() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    const { data, error } = await supabase.from('logs').insert([form]).select().single()
+    const content = serializeLogSections(form.completed, form.insight, form.plan, form.other)
+    const { data, error } = await supabase.from('logs').insert([{ date: form.date, title: form.title, content, type: form.type }]).select().single()
     if (error) {
       alert(`发布失败：${error.message}`)
     } else {
-      setLogs(prev => [data ?? { ...form, id: Date.now().toString(), tool_id: null, created_at: new Date().toISOString() } as Log, ...prev])
+      setLogs(prev => [data ?? { date: form.date, title: form.title, content, type: form.type, id: Date.now().toString(), tool_id: null, created_at: new Date().toISOString() } as Log, ...prev])
       setShowForm(false)
-      setForm({ date: '', title: '', content: '', type: 'daily' })
+      setForm({ date: '', title: '', completed: '', insight: '', plan: '', other: '', type: 'daily' })
     }
     setSaving(false)
   }
 
   const openEdit = (log: Log) => {
     setEditingLogId(log.id)
-    setEditForm({ date: log.date, title: log.title, content: log.content, type: log.type })
+    const sections = deserializeLogContent(log.content)
+    setEditForm({
+      date: log.date, title: log.title, type: log.type,
+      completed: sections?.completed ?? log.content,
+      insight: sections?.insight ?? '',
+      plan: sections?.plan ?? '',
+      other: sections?.other ?? '',
+    })
     setShowForm(false)
   }
 
@@ -521,7 +583,8 @@ function AdminLogs() {
     e.preventDefault()
     if (!editingLogId) return
     setSaving(true)
-    const { data, error } = await supabase.from('logs').update(editForm).eq('id', editingLogId).select().single()
+    const content = serializeLogSections(editForm.completed, editForm.insight, editForm.plan, editForm.other)
+    const { data, error } = await supabase.from('logs').update({ date: editForm.date, title: editForm.title, content, type: editForm.type }).eq('id', editingLogId).select().single()
     if (error) {
       alert(`保存失败：${error.message}`)
     } else if (!data) {
@@ -564,7 +627,10 @@ function AdminLogs() {
             </select>
             <input required value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="标题" className={fieldCls} />
           </div>
-          <textarea required value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} placeholder="日志内容" rows={4} className={`w-full ${fieldCls} resize-none`} />
+          <textarea value={form.completed} onChange={e => setForm(p => ({ ...p, completed: e.target.value }))} placeholder="今日完成" rows={2} className={`w-full ${fieldCls} resize-none`} />
+          <textarea value={form.insight} onChange={e => setForm(p => ({ ...p, insight: e.target.value }))} placeholder="分享心得" rows={2} className={`w-full ${fieldCls} resize-none`} />
+          <textarea value={form.plan} onChange={e => setForm(p => ({ ...p, plan: e.target.value }))} placeholder="明日计划" rows={2} className={`w-full ${fieldCls} resize-none`} />
+          <textarea value={form.other} onChange={e => setForm(p => ({ ...p, other: e.target.value }))} placeholder="其他（不公开显示标题）" rows={2} className={`w-full ${fieldCls} resize-none`} />
           <div className="flex gap-2">
             <button type="submit" disabled={saving} className="px-4 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1.5">
               {saving && <Loader2 size={12} className="animate-spin" />} 发布
@@ -591,7 +657,10 @@ function AdminLogs() {
                   </select>
                   <input required value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} placeholder="标题" className={fieldCls} />
                 </div>
-                <textarea required value={editForm.content} onChange={e => setEditForm(p => ({ ...p, content: e.target.value }))} rows={4} className={`w-full ${fieldCls} resize-none`} />
+                <textarea value={editForm.completed} onChange={e => setEditForm(p => ({ ...p, completed: e.target.value }))} placeholder="今日完成" rows={2} className={`w-full ${fieldCls} resize-none`} />
+                <textarea value={editForm.insight} onChange={e => setEditForm(p => ({ ...p, insight: e.target.value }))} placeholder="分享心得" rows={2} className={`w-full ${fieldCls} resize-none`} />
+                <textarea value={editForm.plan} onChange={e => setEditForm(p => ({ ...p, plan: e.target.value }))} placeholder="明日计划" rows={2} className={`w-full ${fieldCls} resize-none`} />
+                <textarea value={editForm.other} onChange={e => setEditForm(p => ({ ...p, other: e.target.value }))} placeholder="其他（不公开显示标题）" rows={2} className={`w-full ${fieldCls} resize-none`} />
                 <div className="flex gap-2">
                   <button type="submit" disabled={saving} className="px-4 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1.5">
                     {saving && <Loader2 size={12} className="animate-spin" />} 保存修改

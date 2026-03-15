@@ -7,11 +7,13 @@ export interface Tool {
   name: string
   description: string
   status: ToolStatus
+  sort_order: number
   start_date: string | null
   complete_date: string | null
   url: string | null
   try_count: number
   vote_count: number
+  core_scenarios: string | null
   features: string | null
   how_to_use: string | null
   notes: string | null

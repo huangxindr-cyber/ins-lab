@@ -92,6 +92,21 @@ export default function ToolDetailPage() {
               )}
             </div>
 
+            {/* Core Scenarios */}
+            {tool.core_scenarios && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">核心场景</h2>
+                <ul className="space-y-2">
+                  {tool.core_scenarios.split('\n').filter(Boolean).map((s, i) => (
+                    <li key={i} className="flex items-start gap-2 text-gray-600 text-sm">
+                      <span className="text-indigo-400 mt-0.5">▸</span>
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* Features */}
             {tool.features && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">

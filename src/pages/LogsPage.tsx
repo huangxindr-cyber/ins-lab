@@ -3,6 +3,25 @@ import { Loader2 } from 'lucide-react'
 import type { Log } from '../types'
 import { getLogs } from '../lib/api'
 
+const SECTION_LABELS: Record<string, string> = {
+  '今日完成': '今日完成',
+  '分享心得': '分享心得',
+  '明日计划': '明日计划',
+}
+
+function parseLogContent(content: string): { key: string; label: string | null; text: string }[] | null {
+  const keys = ['今日完成', '分享心得', '明日计划', '其他']
+  if (!keys.some(k => content.includes(`[${k}]`))) return null
+  return keys
+    .map(k => {
+      const regex = new RegExp(`\\[${k}\\]\\n?([\\s\\S]*?)(?=\\n\\[|$)`)
+      const match = content.match(regex)
+      const text = match ? match[1].trim() : ''
+      return { key: k, label: k === '其他' ? null : SECTION_LABELS[k] ?? k, text }
+    })
+    .filter(s => s.text)
+}
+
 const PAGE_SIZE = 5
 
 export default function LogsPage() {
@@ -81,7 +100,28 @@ export default function LogsPage() {
                     </div>
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                       <h3 className="font-semibold text-gray-900 mb-2">{log.title}</h3>
-                      <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">{log.content}</p>
+                      {(() => {
+                        const sections = parseLogContent(log.content)
+                        if (!sections) {
+                          return <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">{log.content}</p>
+                        }
+                        return (
+                          <div className="space-y-2">
+                            {sections.map(s => (
+                              <div key={s.key}>
+                                {s.label ? (
+                                  <p className="text-sm leading-relaxed text-gray-600">
+                                    <span className="font-medium text-gray-700">{s.label}：</span>
+                                    {s.text}
+                                  </p>
+                                ) : (
+                                  <p className="text-sm leading-relaxed text-gray-500 whitespace-pre-line">{s.text}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      })()}
                     </div>
                   </div>
                 </div>
