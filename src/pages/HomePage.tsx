@@ -74,7 +74,7 @@ function WechatQRWidget() {
             <span className="text-xs font-semibold opacity-90">加入实验讨论群</span>
           </div>
           <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-full rounded-xl object-cover border-2 border-white/20" />
-          <p className="text-xs text-teal-100 mt-3 leading-relaxed text-center">扫码或长按识别，加入讨论群</p>
+          <p className="text-xs text-teal-100 mt-3 leading-relaxed text-center">微信扫码/长按保存或转发</p>
         </div>
       </div>
 
@@ -111,7 +111,7 @@ function WechatQRWidget() {
                 </div>
               </div>
               <p className="text-center text-xs text-gray-400 mt-4 leading-relaxed">
-                长按图片 → 识别二维码 → 加入群聊<br />第一时间获取新工具上线通知
+                微信扫码/长按保存或转发<br />第一时间获取新工具上线通知
               </p>
             </div>
           </div>
@@ -305,7 +305,7 @@ function SubscribeSection() {
             <div className="bg-white p-3 rounded-2xl shadow-lg">
               <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-40 h-40 object-cover rounded-xl" />
             </div>
-            <p className="text-teal-100 text-xs mt-3">长按图片识别二维码加入群聊</p>
+            <p className="text-teal-100 text-xs mt-3">微信扫码/长按保存或转发</p>
           </div>
         )}
       </div>

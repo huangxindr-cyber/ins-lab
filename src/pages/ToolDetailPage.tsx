@@ -285,7 +285,7 @@ function JoinGroupCard() {
         <div className="mt-4 flex flex-col sm:flex-row items-center gap-4 pt-4 border-t border-teal-400/40">
           <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-32 h-32 rounded-xl object-cover border-2 border-white/30 shrink-0" />
           <p className="text-teal-100 text-sm leading-relaxed text-center sm:text-left">
-            长按图片识别二维码<br />加入 AI 保险实验讨论群<br />第一时间获取新工具通知
+            微信扫码/长按保存或转发<br />加入 AI 保险实验讨论群<br />第一时间获取新工具通知
           </p>
         </div>
       )}
