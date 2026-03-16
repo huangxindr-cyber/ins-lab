@@ -298,28 +298,64 @@ function AdminTools() {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <input required value={form.number} onChange={e => setForm(p => ({ ...p, number: e.target.value }))} placeholder="编号" type="number" className={inputCls} />
-            <input required value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="工具名称" className={inputCls} />
-            <input value={form.sort_order} onChange={e => setForm(p => ({ ...p, sort_order: e.target.value }))} placeholder="显示排序（数字小靠前）" type="number" className={inputCls} title="显示排序" />
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">编号</label>
+              <input required value={form.number} onChange={e => setForm(p => ({ ...p, number: e.target.value }))} type="number" className={`${inputCls} w-full`} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">工具名称</label>
+              <input required value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className={`${inputCls} w-full`} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">显示排序（数字小靠前）</label>
+              <input value={form.sort_order} onChange={e => setForm(p => ({ ...p, sort_order: e.target.value }))} type="number" className={`${inputCls} w-full`} />
+            </div>
           </div>
-          <textarea required value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="一句话介绍（卡片摘要）" rows={2} className={`${inputCls} resize-none`} />
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">一句话介绍（卡片摘要）</label>
+            <textarea required value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={2} className={`${inputCls} resize-none w-full`} />
+          </div>
           <div className="grid grid-cols-3 gap-3">
-            <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))} className={inputCls}>
-              <option value="upcoming">即将开发</option>
-              <option value="developing">开发中</option>
-              <option value="completed">已上线</option>
-            </select>
-            <input value={form.start_date} onChange={e => setForm(p => ({ ...p, start_date: e.target.value }))} type="date" className={inputCls} />
-            <input value={form.complete_date} onChange={e => setForm(p => ({ ...p, complete_date: e.target.value }))} type="date" className={inputCls} />
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">状态</label>
+              <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))} className={`${inputCls} w-full`}>
+                <option value="upcoming">即将开发</option>
+                <option value="developing">开发中</option>
+                <option value="completed">已上线</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">开始日期</label>
+              <input value={form.start_date} onChange={e => setForm(p => ({ ...p, start_date: e.target.value }))} type="date" className={`${inputCls} w-full`} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">完成日期</label>
+              <input value={form.complete_date} onChange={e => setForm(p => ({ ...p, complete_date: e.target.value }))} type="date" className={`${inputCls} w-full`} />
+            </div>
           </div>
-          <input value={form.url} onChange={e => setForm(p => ({ ...p, url: e.target.value }))} placeholder="试用链接（选填）" className={inputCls} />
-          <input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="进度备注（卡片展示，开发中/已上线可见）" className={inputCls} />
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">试用链接（选填）</label>
+            <input value={form.url} onChange={e => setForm(p => ({ ...p, url: e.target.value }))} placeholder="https://..." className={`${inputCls} w-full`} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">进度备注（卡片展示，开发中/已上线可见）</label>
+            <input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} className={`${inputCls} w-full`} />
+          </div>
 
           <div className="border-t border-gray-100 pt-3 space-y-3">
             <p className="text-xs text-gray-400 font-medium">以下内容显示在详情页</p>
-            <textarea value={form.core_scenarios} onChange={e => setForm(p => ({ ...p, core_scenarios: e.target.value }))} placeholder="核心场景（每行一条，展示在功能介绍上方）" rows={3} className={`${inputCls} resize-none`} />
-            <textarea value={form.features} onChange={e => setForm(p => ({ ...p, features: e.target.value }))} placeholder="功能介绍（每行一条，详情页展示）" rows={3} className={`${inputCls} resize-none`} />
-            <textarea value={form.how_to_use} onChange={e => setForm(p => ({ ...p, how_to_use: e.target.value }))} placeholder="使用方法（每行一步，详情页展示）" rows={3} className={`${inputCls} resize-none`} />
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">核心场景（每行一条，展示在功能介绍上方）</label>
+              <textarea value={form.core_scenarios} onChange={e => setForm(p => ({ ...p, core_scenarios: e.target.value }))} rows={3} className={`${inputCls} resize-none w-full`} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">功能介绍（每行一条，详情页展示）</label>
+              <textarea value={form.features} onChange={e => setForm(p => ({ ...p, features: e.target.value }))} rows={3} className={`${inputCls} resize-none w-full`} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">使用方法（每行一步，详情页展示）</label>
+              <textarea value={form.how_to_use} onChange={e => setForm(p => ({ ...p, how_to_use: e.target.value }))} rows={3} className={`${inputCls} resize-none w-full`} />
+            </div>
           </div>
 
           {saveError && <p className="text-red-500 text-sm">{saveError}</p>}
@@ -462,17 +498,38 @@ function ToolLogManager({ toolId, toolName }: { toolId: string; toolName: string
       {showForm && (
         <form onSubmit={handleSave} className="bg-gray-50 rounded-xl p-4 mb-3 space-y-2">
           <div className="grid grid-cols-3 gap-2">
-            <input required value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} type="date" className={inputCls} />
-            <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))} className={inputCls}>
-              <option value="daily">日记录</option>
-              <option value="weekly">周复盘</option>
-            </select>
-            <input required value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="标题" className={inputCls} />
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">日期</label>
+              <input required value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} type="date" className={`${inputCls} w-full`} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">类型</label>
+              <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))} className={`${inputCls} w-full`}>
+                <option value="daily">日记录</option>
+                <option value="weekly">周复盘</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">标题</label>
+              <input required value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} className={`${inputCls} w-full`} />
+            </div>
           </div>
-          <textarea value={form.completed} onChange={e => setForm(p => ({ ...p, completed: e.target.value }))} placeholder="今日完成" rows={2} className={`w-full ${inputCls} resize-none`} />
-          <textarea value={form.insight} onChange={e => setForm(p => ({ ...p, insight: e.target.value }))} placeholder="分享心得" rows={2} className={`w-full ${inputCls} resize-none`} />
-          <textarea value={form.plan} onChange={e => setForm(p => ({ ...p, plan: e.target.value }))} placeholder="明日计划" rows={2} className={`w-full ${inputCls} resize-none`} />
-          <textarea value={form.other} onChange={e => setForm(p => ({ ...p, other: e.target.value }))} placeholder="其他（不公开显示标题）" rows={2} className={`w-full ${inputCls} resize-none`} />
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">今日完成</label>
+            <textarea value={form.completed} onChange={e => setForm(p => ({ ...p, completed: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">分享心得</label>
+            <textarea value={form.insight} onChange={e => setForm(p => ({ ...p, insight: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">明日计划</label>
+            <textarea value={form.plan} onChange={e => setForm(p => ({ ...p, plan: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">其他（不公开显示标题）</label>
+            <textarea value={form.other} onChange={e => setForm(p => ({ ...p, other: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+          </div>
           <div className="flex gap-2">
             <button type="submit" disabled={saving} className="px-3 py-1.5 bg-teal-600 text-white text-xs rounded-lg hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1">
               {saving && <Loader2 size={11} className="animate-spin" />} 发布
@@ -493,17 +550,38 @@ function ToolLogManager({ toolId, toolName }: { toolId: string; toolName: string
               {editingLogId === log.id ? (
                 <form onSubmit={handleEditSave} className="bg-teal-50 rounded-xl p-3 space-y-2">
                   <div className="grid grid-cols-3 gap-2">
-                    <input required value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} type="date" className={inputCls} />
-                    <select value={editForm.type} onChange={e => setEditForm(p => ({ ...p, type: e.target.value }))} className={inputCls}>
-                      <option value="daily">日记录</option>
-                      <option value="weekly">周复盘</option>
-                    </select>
-                    <input required value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} placeholder="标题" className={inputCls} />
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-500 font-medium">日期</label>
+                      <input required value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} type="date" className={`${inputCls} w-full`} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-500 font-medium">类型</label>
+                      <select value={editForm.type} onChange={e => setEditForm(p => ({ ...p, type: e.target.value }))} className={`${inputCls} w-full`}>
+                        <option value="daily">日记录</option>
+                        <option value="weekly">周复盘</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-500 font-medium">标题</label>
+                      <input required value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} className={`${inputCls} w-full`} />
+                    </div>
                   </div>
-                  <textarea value={editForm.completed} onChange={e => setEditForm(p => ({ ...p, completed: e.target.value }))} placeholder="今日完成" rows={2} className={`w-full ${inputCls} resize-none`} />
-                  <textarea value={editForm.insight} onChange={e => setEditForm(p => ({ ...p, insight: e.target.value }))} placeholder="分享心得" rows={2} className={`w-full ${inputCls} resize-none`} />
-                  <textarea value={editForm.plan} onChange={e => setEditForm(p => ({ ...p, plan: e.target.value }))} placeholder="明日计划" rows={2} className={`w-full ${inputCls} resize-none`} />
-                  <textarea value={editForm.other} onChange={e => setEditForm(p => ({ ...p, other: e.target.value }))} placeholder="其他（不公开显示标题）" rows={2} className={`w-full ${inputCls} resize-none`} />
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500 font-medium">今日完成</label>
+                    <textarea value={editForm.completed} onChange={e => setEditForm(p => ({ ...p, completed: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500 font-medium">分享心得</label>
+                    <textarea value={editForm.insight} onChange={e => setEditForm(p => ({ ...p, insight: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500 font-medium">明日计划</label>
+                    <textarea value={editForm.plan} onChange={e => setEditForm(p => ({ ...p, plan: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500 font-medium">其他（不公开显示标题）</label>
+                    <textarea value={editForm.other} onChange={e => setEditForm(p => ({ ...p, other: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+                  </div>
                   <div className="flex gap-2">
                     <button type="submit" disabled={saving} className="px-3 py-1.5 bg-teal-600 text-white text-xs rounded-lg hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1">
                       {saving && <Loader2 size={11} className="animate-spin" />} 保存
@@ -620,17 +698,38 @@ function AdminLogs() {
       {showForm && (
         <form onSubmit={handleSave} className="bg-white rounded-xl border border-gray-100 p-5 mb-4 space-y-3">
           <div className="grid grid-cols-3 gap-3">
-            <input required value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} type="date" className={fieldCls} />
-            <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))} className={fieldCls}>
-              <option value="daily">日记录</option>
-              <option value="weekly">周复盘</option>
-            </select>
-            <input required value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="标题" className={fieldCls} />
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">日期</label>
+              <input required value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} type="date" className={`${fieldCls} w-full`} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">类型</label>
+              <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))} className={`${fieldCls} w-full`}>
+                <option value="daily">日记录</option>
+                <option value="weekly">周复盘</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">标题</label>
+              <input required value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} className={`${fieldCls} w-full`} />
+            </div>
           </div>
-          <textarea value={form.completed} onChange={e => setForm(p => ({ ...p, completed: e.target.value }))} placeholder="今日完成" rows={2} className={`w-full ${fieldCls} resize-none`} />
-          <textarea value={form.insight} onChange={e => setForm(p => ({ ...p, insight: e.target.value }))} placeholder="分享心得" rows={2} className={`w-full ${fieldCls} resize-none`} />
-          <textarea value={form.plan} onChange={e => setForm(p => ({ ...p, plan: e.target.value }))} placeholder="明日计划" rows={2} className={`w-full ${fieldCls} resize-none`} />
-          <textarea value={form.other} onChange={e => setForm(p => ({ ...p, other: e.target.value }))} placeholder="其他（不公开显示标题）" rows={2} className={`w-full ${fieldCls} resize-none`} />
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">今日完成</label>
+            <textarea value={form.completed} onChange={e => setForm(p => ({ ...p, completed: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">分享心得</label>
+            <textarea value={form.insight} onChange={e => setForm(p => ({ ...p, insight: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">明日计划</label>
+            <textarea value={form.plan} onChange={e => setForm(p => ({ ...p, plan: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium">其他（不公开显示标题）</label>
+            <textarea value={form.other} onChange={e => setForm(p => ({ ...p, other: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+          </div>
           <div className="flex gap-2">
             <button type="submit" disabled={saving} className="px-4 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1.5">
               {saving && <Loader2 size={12} className="animate-spin" />} 发布
@@ -650,17 +749,38 @@ function AdminLogs() {
                   <button type="button" onClick={() => setEditingLogId(null)} className="text-gray-400 hover:text-gray-600"><X size={15} /></button>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                  <input required value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} type="date" className={fieldCls} />
-                  <select value={editForm.type} onChange={e => setEditForm(p => ({ ...p, type: e.target.value }))} className={fieldCls}>
-                    <option value="daily">日记录</option>
-                    <option value="weekly">周复盘</option>
-                  </select>
-                  <input required value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} placeholder="标题" className={fieldCls} />
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500 font-medium">日期</label>
+                    <input required value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} type="date" className={`${fieldCls} w-full`} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500 font-medium">类型</label>
+                    <select value={editForm.type} onChange={e => setEditForm(p => ({ ...p, type: e.target.value }))} className={`${fieldCls} w-full`}>
+                      <option value="daily">日记录</option>
+                      <option value="weekly">周复盘</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500 font-medium">标题</label>
+                    <input required value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} className={`${fieldCls} w-full`} />
+                  </div>
                 </div>
-                <textarea value={editForm.completed} onChange={e => setEditForm(p => ({ ...p, completed: e.target.value }))} placeholder="今日完成" rows={2} className={`w-full ${fieldCls} resize-none`} />
-                <textarea value={editForm.insight} onChange={e => setEditForm(p => ({ ...p, insight: e.target.value }))} placeholder="分享心得" rows={2} className={`w-full ${fieldCls} resize-none`} />
-                <textarea value={editForm.plan} onChange={e => setEditForm(p => ({ ...p, plan: e.target.value }))} placeholder="明日计划" rows={2} className={`w-full ${fieldCls} resize-none`} />
-                <textarea value={editForm.other} onChange={e => setEditForm(p => ({ ...p, other: e.target.value }))} placeholder="其他（不公开显示标题）" rows={2} className={`w-full ${fieldCls} resize-none`} />
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500 font-medium">今日完成</label>
+                  <textarea value={editForm.completed} onChange={e => setEditForm(p => ({ ...p, completed: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500 font-medium">分享心得</label>
+                  <textarea value={editForm.insight} onChange={e => setEditForm(p => ({ ...p, insight: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500 font-medium">明日计划</label>
+                  <textarea value={editForm.plan} onChange={e => setEditForm(p => ({ ...p, plan: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500 font-medium">其他（不公开显示标题）</label>
+                  <textarea value={editForm.other} onChange={e => setEditForm(p => ({ ...p, other: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+                </div>
                 <div className="flex gap-2">
                   <button type="submit" disabled={saving} className="px-4 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1.5">
                     {saving && <Loader2 size={12} className="animate-spin" />} 保存修改
