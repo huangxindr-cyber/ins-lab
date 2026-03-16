@@ -103,6 +103,14 @@ export default function ToolCard({ tool, onVote }: ToolCardProps) {
             <ExternalLink size={13} />
             进入
           </button>
+        ) : tool.status === 'developing' && tool.url ? (
+          <button
+            onClick={handleEnter}
+            className="w-full flex items-center justify-center gap-1.5 py-3 bg-teal-600 text-white text-sm font-medium rounded-xl hover:bg-teal-700 transition-colors"
+          >
+            <ExternalLink size={13} />
+            点击使用
+          </button>
         ) : tool.status === 'upcoming' ? (
           <button
             onClick={handleVote}

@@ -76,13 +76,13 @@ export default function ToolDetailPage() {
                 </div>
               </div>
 
-              {tool.status === 'completed' ? (
+              {tool.status === 'completed' || (tool.status === 'developing' && tool.url) ? (
                 <button
                   onClick={handleTry}
                   className="flex items-center gap-2 px-5 py-2.5 bg-teal-600 text-white font-medium rounded-xl hover:bg-teal-700 transition-colors"
                 >
                   <ExternalLink size={16} />
-                  进入
+                  {tool.status === 'completed' ? '进入' : '点击使用'}
                 </button>
               ) : (
                 <button disabled className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-400 font-medium rounded-xl cursor-not-allowed">
