@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { LogOut, Loader2, Plus, Trash2, Star, StarOff, CheckCircle, Pencil, X, BookOpen, MessageCircle, Eye, EyeOff } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import type { Tool, Log, Request, RequestReply, Subscription, Suggestion } from '../types'
@@ -24,6 +24,26 @@ function deserializeLogContent(content: string): { completed: string; insight: s
     return m ? m[1].trim() : ''
   }
   return { completed: get('今日完成'), insight: get('分享心得'), plan: get('明日计划'), other: get('其他') }
+}
+
+function AutoTextarea({ className, value, onChange, rows, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  }, [value])
+  return (
+    <textarea
+      ref={ref}
+      className={className}
+      value={value}
+      onChange={onChange}
+      style={{ overflow: 'hidden', resize: 'none' }}
+      {...props}
+    />
+  )
 }
 
 export default function AdminPage() {
@@ -313,7 +333,7 @@ function AdminTools() {
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium">一句话介绍（卡片摘要）</label>
-            <textarea required value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={2} className={`${inputCls} resize-none w-full`} />
+            <AutoTextarea required value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={2} className={`${inputCls} w-full`} />
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
@@ -346,15 +366,15 @@ function AdminTools() {
             <p className="text-xs text-gray-400 font-medium">以下内容显示在详情页</p>
             <div className="space-y-1">
               <label className="text-xs text-gray-500 font-medium">核心场景（每行一条，展示在功能介绍上方）</label>
-              <textarea value={form.core_scenarios} onChange={e => setForm(p => ({ ...p, core_scenarios: e.target.value }))} rows={3} className={`${inputCls} resize-none w-full`} />
+              <AutoTextarea value={form.core_scenarios} onChange={e => setForm(p => ({ ...p, core_scenarios: e.target.value }))} rows={3} className={`${inputCls} w-full`} />
             </div>
             <div className="space-y-1">
               <label className="text-xs text-gray-500 font-medium">功能介绍（每行一条，详情页展示）</label>
-              <textarea value={form.features} onChange={e => setForm(p => ({ ...p, features: e.target.value }))} rows={3} className={`${inputCls} resize-none w-full`} />
+              <AutoTextarea value={form.features} onChange={e => setForm(p => ({ ...p, features: e.target.value }))} rows={3} className={`${inputCls} w-full`} />
             </div>
             <div className="space-y-1">
               <label className="text-xs text-gray-500 font-medium">使用方法（每行一步，详情页展示）</label>
-              <textarea value={form.how_to_use} onChange={e => setForm(p => ({ ...p, how_to_use: e.target.value }))} rows={3} className={`${inputCls} resize-none w-full`} />
+              <AutoTextarea value={form.how_to_use} onChange={e => setForm(p => ({ ...p, how_to_use: e.target.value }))} rows={3} className={`${inputCls} w-full`} />
             </div>
           </div>
 
@@ -516,19 +536,19 @@ function ToolLogManager({ toolId, toolName }: { toolId: string; toolName: string
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium">今日完成</label>
-            <textarea value={form.completed} onChange={e => setForm(p => ({ ...p, completed: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+            <AutoTextarea value={form.completed} onChange={e => setForm(p => ({ ...p, completed: e.target.value }))} rows={2} className={`w-full ${inputCls}`} />
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium">分享心得</label>
-            <textarea value={form.insight} onChange={e => setForm(p => ({ ...p, insight: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+            <AutoTextarea value={form.insight} onChange={e => setForm(p => ({ ...p, insight: e.target.value }))} rows={2} className={`w-full ${inputCls}`} />
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium">明日计划</label>
-            <textarea value={form.plan} onChange={e => setForm(p => ({ ...p, plan: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+            <AutoTextarea value={form.plan} onChange={e => setForm(p => ({ ...p, plan: e.target.value }))} rows={2} className={`w-full ${inputCls}`} />
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium">其他（不公开显示标题）</label>
-            <textarea value={form.other} onChange={e => setForm(p => ({ ...p, other: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+            <AutoTextarea value={form.other} onChange={e => setForm(p => ({ ...p, other: e.target.value }))} rows={2} className={`w-full ${inputCls}`} />
           </div>
           <div className="flex gap-2">
             <button type="submit" disabled={saving} className="px-3 py-1.5 bg-teal-600 text-white text-xs rounded-lg hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1">
@@ -568,19 +588,19 @@ function ToolLogManager({ toolId, toolName }: { toolId: string; toolName: string
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs text-gray-500 font-medium">今日完成</label>
-                    <textarea value={editForm.completed} onChange={e => setEditForm(p => ({ ...p, completed: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+                    <AutoTextarea value={editForm.completed} onChange={e => setEditForm(p => ({ ...p, completed: e.target.value }))} rows={2} className={`w-full ${inputCls}`} />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs text-gray-500 font-medium">分享心得</label>
-                    <textarea value={editForm.insight} onChange={e => setEditForm(p => ({ ...p, insight: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+                    <AutoTextarea value={editForm.insight} onChange={e => setEditForm(p => ({ ...p, insight: e.target.value }))} rows={2} className={`w-full ${inputCls}`} />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs text-gray-500 font-medium">明日计划</label>
-                    <textarea value={editForm.plan} onChange={e => setEditForm(p => ({ ...p, plan: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+                    <AutoTextarea value={editForm.plan} onChange={e => setEditForm(p => ({ ...p, plan: e.target.value }))} rows={2} className={`w-full ${inputCls}`} />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs text-gray-500 font-medium">其他（不公开显示标题）</label>
-                    <textarea value={editForm.other} onChange={e => setEditForm(p => ({ ...p, other: e.target.value }))} rows={2} className={`w-full ${inputCls} resize-none`} />
+                    <AutoTextarea value={editForm.other} onChange={e => setEditForm(p => ({ ...p, other: e.target.value }))} rows={2} className={`w-full ${inputCls}`} />
                   </div>
                   <div className="flex gap-2">
                     <button type="submit" disabled={saving} className="px-3 py-1.5 bg-teal-600 text-white text-xs rounded-lg hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1">
@@ -716,19 +736,19 @@ function AdminLogs() {
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium">今日完成</label>
-            <textarea value={form.completed} onChange={e => setForm(p => ({ ...p, completed: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+            <AutoTextarea value={form.completed} onChange={e => setForm(p => ({ ...p, completed: e.target.value }))} rows={2} className={`w-full ${fieldCls}`} />
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium">分享心得</label>
-            <textarea value={form.insight} onChange={e => setForm(p => ({ ...p, insight: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+            <AutoTextarea value={form.insight} onChange={e => setForm(p => ({ ...p, insight: e.target.value }))} rows={2} className={`w-full ${fieldCls}`} />
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium">明日计划</label>
-            <textarea value={form.plan} onChange={e => setForm(p => ({ ...p, plan: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+            <AutoTextarea value={form.plan} onChange={e => setForm(p => ({ ...p, plan: e.target.value }))} rows={2} className={`w-full ${fieldCls}`} />
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium">其他（不公开显示标题）</label>
-            <textarea value={form.other} onChange={e => setForm(p => ({ ...p, other: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+            <AutoTextarea value={form.other} onChange={e => setForm(p => ({ ...p, other: e.target.value }))} rows={2} className={`w-full ${fieldCls}`} />
           </div>
           <div className="flex gap-2">
             <button type="submit" disabled={saving} className="px-4 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1.5">
@@ -767,19 +787,19 @@ function AdminLogs() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-gray-500 font-medium">今日完成</label>
-                  <textarea value={editForm.completed} onChange={e => setEditForm(p => ({ ...p, completed: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+                  <AutoTextarea value={editForm.completed} onChange={e => setEditForm(p => ({ ...p, completed: e.target.value }))} rows={2} className={`w-full ${fieldCls}`} />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-gray-500 font-medium">分享心得</label>
-                  <textarea value={editForm.insight} onChange={e => setEditForm(p => ({ ...p, insight: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+                  <AutoTextarea value={editForm.insight} onChange={e => setEditForm(p => ({ ...p, insight: e.target.value }))} rows={2} className={`w-full ${fieldCls}`} />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-gray-500 font-medium">明日计划</label>
-                  <textarea value={editForm.plan} onChange={e => setEditForm(p => ({ ...p, plan: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+                  <AutoTextarea value={editForm.plan} onChange={e => setEditForm(p => ({ ...p, plan: e.target.value }))} rows={2} className={`w-full ${fieldCls}`} />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-gray-500 font-medium">其他（不公开显示标题）</label>
-                  <textarea value={editForm.other} onChange={e => setEditForm(p => ({ ...p, other: e.target.value }))} rows={2} className={`w-full ${fieldCls} resize-none`} />
+                  <AutoTextarea value={editForm.other} onChange={e => setEditForm(p => ({ ...p, other: e.target.value }))} rows={2} className={`w-full ${fieldCls}`} />
                 </div>
                 <div className="flex gap-2">
                   <button type="submit" disabled={saving} className="px-4 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1.5">
@@ -995,7 +1015,7 @@ function ReplyManager({ requestId, replies, onAdd, onUpdate, onDelete }: {
     onDelete(id)
   }
 
-  const fieldCls = "w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200 resize-none"
+  const fieldCls = "w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
 
   return (
     <div className="mt-3 pt-3 border-t border-gray-100">
@@ -1015,7 +1035,7 @@ function ReplyManager({ requestId, replies, onAdd, onUpdate, onDelete }: {
             <div key={rep.id}>
               {editingId === rep.id ? (
                 <form onSubmit={handleEdit} className="bg-amber-50 rounded-lg p-3 space-y-2">
-                  <textarea required value={editContent} onChange={e => setEditContent(e.target.value)} rows={2} className={fieldCls} />
+                  <AutoTextarea required value={editContent} onChange={e => setEditContent(e.target.value)} rows={2} className={fieldCls} />
                   <div className="flex gap-2">
                     <button type="submit" disabled={saving} className="px-3 py-1.5 bg-amber-500 text-white text-xs rounded-lg hover:bg-amber-600 disabled:opacity-50 flex items-center gap-1">
                       {saving && <Loader2 size={10} className="animate-spin" />} 保存
@@ -1039,7 +1059,7 @@ function ReplyManager({ requestId, replies, onAdd, onUpdate, onDelete }: {
       {/* 新增回复表单 */}
       {showForm && (
         <form onSubmit={handleAdd} className="space-y-2">
-          <textarea required value={content} onChange={e => setContent(e.target.value)} rows={2} placeholder="输入回复内容..." className={fieldCls} />
+          <AutoTextarea required value={content} onChange={e => setContent(e.target.value)} rows={2} placeholder="输入回复内容..." className={fieldCls} />
           <div className="flex gap-2">
             <button type="submit" disabled={saving} className="px-3 py-1.5 bg-amber-500 text-white text-xs rounded-lg hover:bg-amber-600 disabled:opacity-50 flex items-center gap-1">
               {saving && <Loader2 size={10} className="animate-spin" />} 发布回复
