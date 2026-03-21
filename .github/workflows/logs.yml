@@ -1,0 +1,104 @@
+name: 查看服务器日志
+
+on:
+  workflow_dispatch:
+    inputs:
+      lines:
+        description: '显示最近多少行日志'
+        required: false
+        default: '100'
+      log_type:
+        description: '日志类型'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - error
+          - access
+
+concurrency:
+  group: fetch-logs
+  cancel-in-progress: true
+
+jobs:
+  fetch-logs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 获取服务器诊断信息
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ALIYUN_HOST }}
+          username: ${{ secrets.ALIYUN_USER }}
+          key: ${{ secrets.ALIYUN_KEY }}
+          script: |
+            DEPLOY_DIR="/www/wwwroot/lab.tanpeak.com"
+
+            echo "====== 部署目录文件列表 ======"
+            ls -la "$DEPLOY_DIR/"
+
+            echo ""
+            echo "====== package.json 检查 ======"
+            cat "$DEPLOY_DIR/package.json" 2>/dev/null || echo "package.json 不存在（静态网站）"
+
+            echo ""
+            echo "====== index.html 检查 ======"
+            head -20 "$DEPLOY_DIR/index.html" 2>/dev/null || echo "index.html 不存在"
+
+            echo ""
+            echo "====== Nginx 访问日志 (最近 ${{ github.event.inputs.lines }} 行) ======"
+
+            LOG_TYPE="${{ github.event.inputs.log_type }}"
+            LINES="${{ github.event.inputs.lines }}"
+
+            # 尝试多个可能的日志路径
+            NGINX_LOG=""
+            for path in "/var/log/nginx/lab.tanpeak.com.log" "/var/log/nginx/access.log" "/www/wwwlogs/lab.tanpeak.com.log"; do
+              if [ -f "$path" ]; then
+                NGINX_LOG="$path"
+                break
+              fi
+            done
+
+            if [ -n "$NGINX_LOG" ]; then
+              echo "日志路径: $NGINX_LOG"
+              tail -n "$LINES" "$NGINX_LOG"
+            else
+              # 尝试宝塔的日志路径
+              BT_LOG="/www/wwwlogs/lab.tanpeak.com.log"
+              if [ -f "$BT_LOG" ]; then
+                echo "日志路径: $BT_LOG"
+                tail -n "$LINES" "$BT_LOG"
+              else
+                echo "未找到 Nginx 访问日志"
+                echo "尝试查找: find /var/log/nginx -name '*lab*' 2>/dev/null"
+                find /var/log/nginx -name '*lab*' 2>/dev/null | head -5
+              fi
+            fi
+
+            echo ""
+            echo "====== Nginx 错误日志 (最近 $LINES 行) ======"
+
+            NGINX_ERR=""
+            for path in "/var/log/nginx/lab.tanpeak.com.error.log" "/var/log/nginx/error.log" "/www/wwwlogs/lab.tanpeak.com.error.log"; do
+              if [ -f "$path" ]; then
+                NGINX_ERR="$path"
+                break
+              fi
+            done
+
+            if [ -n "$NGINX_ERR" ]; then
+              echo "错误日志路径: $NGINX_ERR"
+              tail -n "$LINES" "$NGINX_ERR"
+            else
+              echo "未找到 Nginx 错误日志"
+            fi
+
+            echo ""
+            echo "====== 磁盘使用情况 ======"
+            df -h /
+
+            echo ""
+            echo "====== 内存使用情况 ======"
+            free -h
