@@ -190,7 +190,7 @@ function GroupHint() {
       </div>
       {showQR && (
         <div className="mt-3 flex items-center gap-4">
-          {/* 直播后恢复：<img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-24 h-24 object-cover rounded-xl border border-teal-200 shrink-0" /> */}
+          <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-24 h-24 object-cover rounded-xl border border-teal-200 shrink-0" />
           <p className="text-xs text-teal-600 leading-relaxed">微信扫码/长按保存或转发<br />加入 AI 保险实验讨论群</p>
         </div>
       )}

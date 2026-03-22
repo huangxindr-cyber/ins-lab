@@ -73,7 +73,7 @@ function WechatQRWidget() {
             <Users size={14} className="opacity-80" />
             <span className="text-xs font-semibold opacity-90">加入实验讨论群</span>
           </div>
-          {/* 直播后恢复：<img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-full rounded-xl object-cover border-2 border-white/20" /> */}
+          <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-full rounded-xl object-cover border-2 border-white/20" />
           <p className="text-xs text-teal-100 mt-3 leading-relaxed text-center">微信扫码/长按保存或转发</p>
         </div>
       </div>
@@ -107,7 +107,7 @@ function WechatQRWidget() {
               </div>
               <div className="flex justify-center">
                 <div className="bg-gradient-to-b from-teal-50 to-white p-4 rounded-2xl border border-teal-100">
-                  {/* 直播后恢复：<img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-48 h-48 object-cover rounded-xl" /> */}
+                  <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-48 h-48 object-cover rounded-xl" />
                 </div>
               </div>
               <p className="text-center text-xs text-gray-400 mt-4 leading-relaxed">
@@ -303,7 +303,7 @@ function SubscribeSection() {
         {showGroupQR && (
           <div className="mt-4 flex flex-col items-center">
             <div className="bg-white p-3 rounded-2xl shadow-lg">
-              {/* 直播后恢复：<img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-40 h-40 object-cover rounded-xl" /> */}
+              <img src="/wechat-qrcode.jpg" alt="微信群二维码" className="w-40 h-40 object-cover rounded-xl" />
             </div>
             <p className="text-teal-100 text-xs mt-3">微信扫码/长按保存或转发</p>
           </div>
